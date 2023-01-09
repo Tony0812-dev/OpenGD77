@@ -1,20 +1,29 @@
 /* -*- coding: binary; -*- */
 /* 
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 /*
  * Translators: JE4SMQ
@@ -97,16 +106,16 @@ const stringsTable_t japaneseLanguage =
 .bandwidth				= "ÊÞÝÄÞÊÊÞ", // MaxLen: 16 (with ':' + .n_a, "25kHz" or "12.5kHz")
 .stepFreq				= "½Ã¯Ìß", // MaxLen: 7 (with ':' + xx.xxkHz fitted)
 .tot					= "TOT", // MaxLen: 16 (with ':' + .off or 15..3825)
-.off					= "µÌ", // MaxLen: 16 (with ':' + .timeout_beep, .calibration or .band_limits)
+.off					= "µÌ", // MaxLen: 16 (with ':' + .timeout_beep, .band_limits)
 .zone_skip				= "¿Þ-Ý ½·¯Ìß", // MaxLen: 16 (with ':' + .yes or .no) 
 .all_skip				= "µ-Ù ½·¯Ìß", // MaxLen: 16 (with ':' + .yes or .no)
 .yes					= "Ê²", // MaxLen: 16 (with ':' + .zone_skip, .all_skip or .factory_reset)
 .no					= "²²´", // MaxLen: 16 (with ':' + .zone_skip, .all_skip or .factory_reset)
 .rx_group				= "RX Grp", // MaxLen: 16 (with ':' and codeplug group name)
-.on					= "µÝ", // MaxLen: 16 (with ':' + .calibration or .band_limits)
+.on					= "µÝ", // MaxLen: 16 (with ':' + .band_limits)
 .timeout_beep				= "À²Ñ±³ÄËÞ-Ìß", // MaxLen: 16 (with ':' + .off or 5..20)
-.UNUSED_1				= "",
-.calibration				= "·¬ØÌÞÚ-¼®Ý", // MaxLen: 16 (with ':' + .on or .off)
+.list_full				= "List full",
+.UNUSED_1			= "",
 .band_limits				= "ÊÞÝÄÞ¾²¹ÞÝ", // MaxLen: 16 (with ':' + .on or .off)
 .beep_volume				= "ËÞ-ÌßµÝØ®³", // MaxLen: 16 (with ':' + -24..6 + 'dB')
 .dmr_mic_gain				= "DMR Ï²¸¹Þ²Ý", // MaxLen: 16 (with ':' + -33..12 + 'dB')
@@ -153,9 +162,9 @@ const stringsTable_t japaneseLanguage =
 .both					= "Ø®³Î³", // MaxLen 16 (with ':' + .dmr_beep)
 .vox_threshold                          = "VOX ½Ú¯¼®ÙÄÞ", // MaxLen 16 (with ':' + .off or 1..30)
 .vox_tail                               = "VOX Ã-Ù", // MaxLen 16 (with ':' + .n_a or '0.0s')
-.audio_prompt				= "µÝ¾²±ÝÅ²",// Maxlen 16 (with ':' + .silent, .normal, .beep or .voice_prompt_level_1)
+.audio_prompt				= "µÝ¾²±ÝÅ²",// Maxlen 16 (with ':' + .silent, .beep or .voice_prompt_level_1)
 .silent                                 = "Å¼", // Maxlen 16 (with : + audio_prompt)
-.normal                                 = "Â³¼Þ®³", // Maxlen 16 (with : + audio_prompt)
+.UNUSED_2			= "",
 .beep					= "ËÞ-Ìß", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_1			= "µÝ¾² L1", // Maxlen 16 (with : + audio_prompt)
 .transmitTalkerAlias			= "TA¿³¼Ý", // Maxlen 16 (with : + .on or .off)
@@ -171,7 +180,7 @@ const stringsTable_t japaneseLanguage =
 .voice_prompt_level_2			= "µÝ¾² L2", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_3			= "µÝ¾² L3", // Maxlen 16 (with : + audio_prompt)
 .dmr_filter				= "DMR Ì¨ÙÀ-",// MaxLen: 12 (with ':' + settings: "TG" or "Ct" or "RxG")
-.dmr_cc_filter				= "CC Ì¨ÙÀ-", // MaxLen: 12 (with ':' + settings: .on or .off)
+.UNUSED_4				= "",
 .dmr_ts_filter				= "TS Ì¨ÙÀ-", // MaxLen: 12 (with ':' + settings: .on or .off)
 .dtmf_contact_list			= "DTMF ºÝÀ¸ÄØ½Ä", // Maxlen: 16
 .channel_power				= "Ch Pwr", //Displayed as "Ch Power:" + .from_master or "Ch Power:"+ power text e.g. "Power:500mW" . Max total length 16
@@ -185,15 +194,47 @@ const stringsTable_t japaneseLanguage =
 .celcius				= "°C",
 .seconds				= "ËÞ®³",
 .radio_info				= "Ñ¾Ý· ¼Þ®³Î³",
-.temperature_calibration		= "µÝÄÞCal",
+.temperature_calibration		= "µÝÄÞÁ®³¾²",
 .pin_code				= "±Ý¼®³ÊÞÝºÞ³",
 .please_confirm				= "¶¸ÆÝ¼Ã¸ÀÞ»²", // MaxLen: 15
 .vfo_freq_bind_mode			= "TRFÚÝÄÞ³",
 .overwrite_qm				= "¶·¶´OK?", //Maxlen: 14 chars
-.eco_level				= "Eco Level",
-.buttons				= "Buttons",
+.eco_level				= "´ºÚÍÞÙ",
+.buttons				= "ÎÞÀÝ",
 .leds					= "LEDs",
-.scan_dwell_time		= "Scan dwell"
+.scan_dwell_time			= "½·¬ÝÃ²¼¼Þ¶Ý",
+.battery_calibration			= "ÃÞÝ±ÂÁ®³¾²",
+.low					= "µ¿²",
+.high					= "ÊÔ²",
+.dmr_id					= "DMR ID",
+.scan_on_boot				= "·ÄÞ³¼Þ½·¬Ý",
+.dtmf_entry				= "DTMF ´ÝÄØ°",
+.name					= "ÅÏ´",
+.UNUSED_3				= "",
+.openDM1801A 				= "OpenDM1801A", // Do not translate
+.time					= "¼Þ¶Ý",
+.uptime					= "Uptime",
+.hours					= "¼Þ¶Ý",
+.minutes				= "ÌÝ",
+.satellite				= "´²¾²",
+.alarm_time				= "±×°Ñ¼Þ¶Ý",
+.location				= "Û¹°¼®Ý",
+.date					= "Ë½Þ¹",
+.timeZone				= "À²Ñ¿Þ°Ý",
+.suspend				= "»½ÍßÝÄÞ",
+.pass					= "Êß½", // For satellite screen
+.elevation				= "El",
+.azimuth				= "Az",
+.inHHMMSS				= "in",
+.predicting				= "Ö¿³",
+.maximum				= "Max",
+.satellite_short		= "Sat",
+.local					= "Û°¶Ù",
+.UTC					= "UTC",
+.symbols				= "NSEW", // symbols: N,S,E,W
+.not_set				= "¾¯Ä¼Å²",
+.general_options		= "¾ÞÝÀ²µÌß¼®Ý",
+.radio_options			= "Ñ¾ÝµÌß¼®Ý"
 };
 /********************************************************************
  *

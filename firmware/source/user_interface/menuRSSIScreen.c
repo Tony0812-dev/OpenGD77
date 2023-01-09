@@ -1,19 +1,29 @@
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 #include "functions/calibration.h"
 #include "functions/settings.h"
@@ -42,9 +52,9 @@ menuStatus_t menuRSSIScreen(uiEvent_t *ev, bool isFirstRun)
 	{
 		//calibrationGetRSSIMeterParams(&rssiCalibration); // UNUSED
 		menuDataGlobal.endIndex = 0;
-		ucClearBuf();
+		displayClearBuf();
 		menuDisplayTitle(currentLanguage->rssi);
-		ucRenderRows(0, 2);
+		displayRenderRows(0, 2);
 
 		updateScreen(true, true);
 	}
@@ -67,16 +77,11 @@ menuStatus_t menuRSSIScreen(uiEvent_t *ev, bool isFirstRun)
 }
 
 // Returns S-Unit 0..9..10(S9+10dB)..15(S9+60)
-static int32_t getSignalStrength(int dBm)
+static int32_t getSignalStrength(int dbm)
 {
-	if (dBm < DBM_LEVELS[1])
-	{
-		return 0;
-	}
-
 	for (int8_t i = 15; i >= 0; i--)
 	{
-		if (dBm >= DBM_LEVELS[i])
+		if (dbm >= DBM_LEVELS[i])
 		{
 			return i;
 		}
@@ -87,7 +92,7 @@ static int32_t getSignalStrength(int dBm)
 
 static void updateScreen(bool forceRedraw, bool isFirstRun)
 {
-	char buffer[17];
+	char buffer[SCREEN_LINE_BUFFER_SIZE];
 	int barWidth;
 
 	dBm = getRSSIdBm();
@@ -95,16 +100,10 @@ static void updateScreen(bool forceRedraw, bool isFirstRun)
 
 	if (isFirstRun && (nonVolatileSettings.audioPromptMode >= AUDIO_PROMPT_MODE_VOICE_LEVEL_1))
 	{
-		if (voicePromptsIsPlaying())
-		{
-			voicePromptsTerminate();
-		}
 		voicePromptsInit();
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		voicePromptsAppendLanguageString(&currentLanguage->rssi);
 		voicePromptsAppendLanguageString(&currentLanguage->menu);
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		updateVoicePrompts(false, true);
 	}
@@ -112,23 +111,23 @@ static void updateScreen(bool forceRedraw, bool isFirstRun)
 	if (forceRedraw)
 	{
 		// Clear whole drawing region
-		ucFillRect(0, 14, DISPLAY_SIZE_X, DISPLAY_SIZE_Y - 14, true);
+		displayFillRect(0, 14, DISPLAY_SIZE_X, DISPLAY_SIZE_Y - 14, true);
 
 		// Draw S-Meter outer frame
-		ucDrawRect((barX - 2), (DISPLAY_Y_POS_RSSI_BAR - 2), (DISPLAY_SIZE_X - (barX - 2)), (8 + 4), true);
+		displayDrawRect((barX - 2), (DISPLAY_Y_POS_RSSI_BAR - 2), (DISPLAY_SIZE_X - (barX - 2)), (8 + 4), true);
 		// Clear the right V line of the frame
-		ucDrawFastVLine((DISPLAY_SIZE_X - 1), (DISPLAY_Y_POS_RSSI_BAR - 1), (8 + 2), false);
+		displayDrawFastVLine((DISPLAY_SIZE_X - 1), (DISPLAY_Y_POS_RSSI_BAR - 1), (8 + 2), false);
 		// S9+xx H Dots
 		for (int16_t i = ((barX - 2) + (rssiMeterBar[9] * 2) + 1); i < DISPLAY_SIZE_X; i += 4)
 		{
-			ucDrawFastHLine(i, (DISPLAY_Y_POS_RSSI_BAR - 2), 2, false);
+			displayDrawFastHLine(i, (DISPLAY_Y_POS_RSSI_BAR - 2), 2, false);
 		}
 		// +10..60dB
-		ucFillRect(((barX - 2) + (rssiMeterBar[9] * 2) + 2), (DISPLAY_Y_POS_RSSI_BAR + 8) + 2,
+		displayFillRect(((barX - 2) + (rssiMeterBar[9] * 2) + 2), (DISPLAY_Y_POS_RSSI_BAR + 8) + 2,
 				(DISPLAY_SIZE_X - ((barX - 2) + (rssiMeterBar[9] * 2) + 2)), 2, false);
 
 		// Draw S, Numbers and ticks
-		ucPrintAt(1, DISPLAY_Y_POS_RSSI_BAR, "S", FONT_SIZE_1_BOLD);
+		displayPrintAt(1, DISPLAY_Y_POS_RSSI_BAR, "S", FONT_SIZE_1_BOLD);
 
 		int xPos;
 		int currentMode = trxGetMode();
@@ -148,14 +147,14 @@ static void updateScreen(bool forceRedraw, bool isFirstRun)
 			xPos *= 2;
 
 			// V ticks
-			ucDrawFastVLine(((barX - 2) + xPos), (DISPLAY_Y_POS_RSSI_BAR + 8) + 2, ((i % 2) ? 3 : 1), ((i < 10) ? true : false));
+			displayDrawFastVLine(((barX - 2) + xPos), (DISPLAY_Y_POS_RSSI_BAR + 8) + 2, ((i % 2) ? 3 : 1), ((i < 10) ? true : false));
 
 			if ((i % 2) && (i < 10))
 			{
 				char buf[2];
 
 				sprintf(buf, "%d", i);
-				ucPrintAt(((((barX - 2) + xPos) - 2) - 1)/* FONT_2 H offset */, DISPLAY_Y_POS_RSSI_BAR + 15
+				displayPrintAt(((((barX - 2) + xPos) - 2) - 1)/* FONT_2 H offset */, DISPLAY_Y_POS_RSSI_BAR + 15
 #if defined(PLATFORM_RD5R)
 						-1
 #endif
@@ -166,15 +165,15 @@ static void updateScreen(bool forceRedraw, bool isFirstRun)
 	else
 	{
 		// Clear dBm region value
-		ucFillRect(((DISPLAY_SIZE_X - (7 * 8)) >> 1), DISPLAY_Y_POS_RSSI_VALUE, (7 * 8), FONT_SIZE_3_HEIGHT, true);
+		displayFillRect(((DISPLAY_SIZE_X - (7 * 8)) >> 1), DISPLAY_Y_POS_RSSI_VALUE, (7 * 8), FONT_SIZE_3_HEIGHT, true);
 	}
 
-	snprintf(buffer, 17, "%d%s", dBm, "dBm");
-	ucPrintCentered(DISPLAY_Y_POS_RSSI_VALUE, buffer, FONT_SIZE_3);
+	snprintf(buffer, SCREEN_LINE_BUFFER_SIZE, "%d%s", dBm, "dBm");
+	displayPrintCentered(DISPLAY_Y_POS_RSSI_VALUE, buffer, FONT_SIZE_3);
 
 #if 0 // DEBUG
 	sprintf(buffer, "%d", trxRxSignal);
-	ucFillRect((DISPLAY_SIZE_X - (4 * 8)), DISPLAY_Y_POS_RSSI_VALUE, (4 * 8), 8, true);
+	displayFillRect((DISPLAY_SIZE_X - (4 * 8)), DISPLAY_Y_POS_RSSI_VALUE, (4 * 8), 8, true);
 	ucPrintCore((DISPLAY_SIZE_X - ((strlen(buffer) + 1) * 8)), DISPLAY_Y_POS_RSSI_VALUE, buffer, FONT_SIZE_2, TEXT_ALIGN_RIGHT, false);
 #endif
 
@@ -194,26 +193,26 @@ static void updateScreen(bool forceRedraw, bool isFirstRun)
 
 	if (barWidth)
 	{
-		ucFillRect(barX, DISPLAY_Y_POS_RSSI_BAR, barWidth, 8, false);
+		displayFillRect(barX, DISPLAY_Y_POS_RSSI_BAR, barWidth, 8, false);
 	}
 
 	// Clear the end of the bar area, if needed
 	if (barWidth < (DISPLAY_SIZE_X - barX))
 	{
-		ucFillRect(barX + barWidth, DISPLAY_Y_POS_RSSI_BAR, (DISPLAY_SIZE_X - barX) - barWidth, 8, true);
+		displayFillRect(barX + barWidth, DISPLAY_Y_POS_RSSI_BAR, (DISPLAY_SIZE_X - barX) - barWidth, 8, true);
 	}
 
 	if (forceRedraw)
 	{
-		ucRender();
+		displayRender();
 	}
 	else
 	{
 #if defined(PLATFORM_RD5R)
-		ucRenderRows((DISPLAY_Y_POS_RSSI_VALUE / 8), (DISPLAY_Y_POS_RSSI_VALUE / 8) + 3);
+		displayRenderRows((DISPLAY_Y_POS_RSSI_VALUE / 8), (DISPLAY_Y_POS_RSSI_VALUE / 8) + 3);
 #else
-		ucRenderRows((DISPLAY_Y_POS_RSSI_VALUE / 8), (DISPLAY_Y_POS_RSSI_VALUE / 8) + 2);
-		ucRenderRows((DISPLAY_Y_POS_RSSI_BAR / 8), (DISPLAY_Y_POS_RSSI_BAR / 8) + 1);
+		displayRenderRows((DISPLAY_Y_POS_RSSI_VALUE / 8), (DISPLAY_Y_POS_RSSI_VALUE / 8) + 2);
+		displayRenderRows((DISPLAY_Y_POS_RSSI_BAR / 8), (DISPLAY_Y_POS_RSSI_BAR / 8) + 1);
 #endif
 	}
 }

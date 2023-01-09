@@ -1,35 +1,47 @@
 /*
- * Copyright (C)2019-2020 Roger Clark. VK3KYY / G4KYF
- *                        Daniel Caujolle-Bert, F1RMB
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 #ifndef _OPENGD77_UIGLOBALS_H_
 #define _OPENGD77_UIGLOBALS_H_
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <time.h>
 #include "functions/settings.h"
 #include "functions/codeplug.h"
+
+typedef unsigned int time_t_custom;     /* date/time in unix secs past 1-Jan-70 */
 
 #define MAX_ZONE_SCAN_NUISANCE_CHANNELS       16
 #define NUM_LASTHEARD_STORED                  32
 
 #if defined(PLATFORM_RD5R)
 #define MENU_ENTRY_HEIGHT                     10
-#define SQUELCH_BAR_H                          4
+#define SQUELCH_BAR_H                          5
 #define V_OFFSET                               2
 #define OVERRIDE_FRAME_HEIGHT                 11
 #define VFO_LETTER_Y_OFFSET                    0
@@ -82,9 +94,10 @@
 #define FREQUENCY_X_POS  /* '>Ta'*/ ((3 * 8) + 4)
 #define MAX_POWER_SETTING_NUM                  9
 #define NUM_PC_OR_TG_DIGITS                    8
+#define MIN_TG_OR_PC_VALUE                     1
 #define MAX_TG_OR_PC_VALUE              16777215
 
-#define RSSI_UPDATE_COUNTER_RELOAD           100
+#define RSSI_UPDATE_COUNTER_RELOAD           200
 
 #define FREQ_ENTER_DIGITS_MAX                 12
 
@@ -94,11 +107,27 @@
 #define TIMESLOT_DURATION                     30
 
 #define SCAN_SHORT_PAUSE_TIME                500 //time to wait after carrier detected to allow time for full signal detection. (CTCSS or DMR)
-#define SCAN_DMR_SIMPLEX_MIN_INTERVAL        (TIMESLOT_DURATION * 2) //minimum time between steps when scanning DMR Simplex. (needs extra time to capture TDMA Pulsing)
+
+#define SCAN_DMR_DUPLEX_MIN_DWELL_TIME       (TIMESLOT_DURATION * 6) //minimum time between steps when scanning DMR Duplex. (needs extra time to capture TDMA Pulsing)
+#define SCAN_DMR_SIMPLEX_MIN_DWELL_TIME      (TIMESLOT_DURATION * 10) //minimum time between steps when scanning DMR Simplex. (needs extra time to capture TDMA Pulsing)
+
 #define SCAN_FREQ_CHANGE_SETTLING_INTERVAL     1 //Time after frequency is changed before RSSI sampling starts
 #define SCAN_SKIP_CHANNEL_INTERVAL             1 //This is actually just an implicit flag value to indicate the channel should be skipped
 
 #define CH_DETAILS_VFO_CHANNEL                -1
+
+#define VFO_SWEEP_NUM_SAMPLES                128
+#define VFO_SWEEP_PIXELS_PER_STEP              4
+#define VFO_SWEEP_GAIN_STEP                    5
+#define VFO_SWEEP_GAIN_MIN                     0
+#define VFO_SWEEP_GAIN_MAX                   120
+#define VFO_SWEEP_GAIN_DEFAULT                86
+#define VFO_SWEEP_RSSI_NOISE_FLOOR_MIN         4
+#define VFO_SWEEP_RSSI_NOISE_FLOOR_MAX        24
+#define VFO_SWEEP_RSSI_NOISE_FLOOR_DEFAULT    14
+
+#define SCREEN_LINE_BUFFER_SIZE               17 // 16 characters (for a 8 pixels font width) + NULL
+
 
 #define SMETER_S0                             -129
 #define SMETER_S1                             -125
@@ -139,6 +168,14 @@
 
 extern const int DBM_LEVELS[16];
 
+#define MAX_DMR_ID_CONTACT_TEXT_LENGTH 51
+
+typedef enum
+{
+	TXSTOP_TIMEOUT,
+	TXSTOP_RX_ONLY,
+	TXSTOP_OUT_OF_BAND
+} txTerminationReason_t;
 
 typedef enum
 {
@@ -173,8 +210,8 @@ typedef enum
 
 typedef struct
 {
-	int 				id;
-	char 				text[20];
+	uint32_t			id;
+	char 				text[MAX_DMR_ID_CONTACT_TEXT_LENGTH];
 } dmrIdDataStruct_t;
 
 
@@ -183,12 +220,13 @@ typedef struct LinkItem
     struct LinkItem 	*prev;
     uint32_t 			id;
     uint32_t 			talkGroupOrPcId;
-    char        		contact[21];
+    char        		contact[MAX_DMR_ID_CONTACT_TEXT_LENGTH];
     char        		talkgroup[17];
     char 				talkerAlias[32];// 4 blocks of data. 6 bytes + 7 bytes + 7 bytes + 7 bytes . plus 1 for termination some more for safety.
     char 				locator[7];
     uint32_t			time;// current system time when this station was heard
-    int					receivedTS;
+    uint8_t				receivedTS;
+    uint8_t				dmrMode;
     struct LinkItem 	*next;
 } LinkItem_t;
 
@@ -218,13 +256,29 @@ typedef enum
 
 typedef bool (*messageBoxValidator_t)(void); // MessageBox callback function prototype.
 
+typedef enum
+{
+	ALARM_TYPE_NONE,
+	ALARM_TYPE_CLOCK,
+	ALARM_TYPE_SATELLITE,
+	ALARM_TYPE_CANCELLED
+} alarmType_t;
+
+typedef enum
+{
+	SATELLITE_PHASE_NONE,
+	SATELLITE_PHASE_BEFORE_PASS,
+	SATELLITE_PHASE_DURING_PASS,
+	SATELLITE_PHASE_AFTER_PASS
+} satellitePhase_t;
+
 typedef struct
 {
+	uint32_t            userDMRId;
 	uint32_t            receivedPcId;
 	uint32_t            tgBeforePcMode;
 	qsoDisplayState_t 	displayQSOState;
 	qsoDisplayState_t 	displayQSOStatePrev;
-	bool 				displaySquelch;
 	bool 				isDisplayingQSOData;
 	bool				displayChannelSettings;
 	bool				reverseRepeater;
@@ -232,12 +286,14 @@ typedef struct
 	int					currentSelectedContactIndex;
 	int					lastHeardCount;
 	int					receivedPcTS;
-
+	bool				dmrDisabled;
+	uint32_t			manualOverrideDMRId;// This is a global so it will default to 0
+	time_t_custom		dateTimeSecs;// Epoch (00:00:00 UTC, January 1, 1970)
 
 	struct
 	{
 		int 				timer;
-		int 				timerReload;
+		int 				dwellTime;
 		int 				direction;
 		int					availableChannelsCount;
 		int 				nuisanceDeleteIndex;
@@ -249,15 +305,19 @@ typedef struct
 		bool				lastIteration;
 		ScanType_t			scanType;
 		int					stepTimeMilliseconds;
+		int					scanSweepCurrentFreq;
+		int					sweepSampleIndex;
+		int					sweepStepSizeIndex;
+		int					sweepSampleIndexIncrement;
 	} Scan;
 
 	struct
 	{
-		int 				tmpDmrDestinationFilterLevel;
-		int 				tmpDmrCcTsFilterLevel;
-		int 				tmpAnalogFilterLevel;
-		int					tmpTxRxLockMode;
-		CSSTypes_t			tmpToneScanCSS;
+		uint8_t 			tmpDmrDestinationFilterLevel;
+		uint8_t 			tmpDmrCcTsFilterLevel;
+		uint8_t 			tmpAnalogFilterLevel;
+		bool				tmpTxRxLockMode;
+		CodeplugCSSTypes_t	tmpToneScanCSS;
 		uint8_t				tmpVFONumber;
 	} QuickMenu;
 
@@ -269,7 +329,7 @@ typedef struct
 
 	struct
 	{
-		int					lastID;
+		uint32_t			lastID;
 		privateCallState_t	state;
 	} PrivateCall;
 
@@ -301,7 +361,15 @@ typedef struct
 		bool                                        inTone;
 	} DTMFContactList;
 
+	struct
+	{
+		uint32_t			alarmTime;
+		alarmType_t			alarmType;
+		uint32_t			currentSatellite;
+	} SatelliteAndAlarmData;
+
 } uiDataGlobal_t;
+
 
 extern const char 				*POWER_LEVELS[];
 extern const char 				*POWER_LEVEL_UNITS[];
@@ -321,5 +389,7 @@ extern struct_codeplugContact_t currentContactData;
 extern LinkItem_t 				*LinkHead;
 
 extern bool 					PTTToggledDown;
+extern uint32_t					xmitErrorTimer;
+
 
 #endif

@@ -1,27 +1,36 @@
 /* -*- coding: windows-1252-unix; -*- */
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 /*
  * Translators: DG3GSP, DL4LEX
  *
  *
- * Rev: 4.5
- */
+ * Rev: 4.8
+*/
 #ifndef USER_INTERFACE_LANGUAGES_GERMAN_H_
 #define USER_INTERFACE_LANGUAGES_GERMAN_H_
 /********************************************************************
@@ -50,8 +59,8 @@ const stringsTable_t germanLanguage =
 .language				= "Sprache", // MaxLen: 16
 .new_contact			= "Neuer Kontakt", // MaxLen: 16
 .dmr_contacts				= "DMR Kontakte", // MaxLen: 16
-.hotspot_mode			= "Hotspot", // MaxLen: 16
 .contact_details		= "Kontakt Details", // MaxLen: 16
+.hotspot_mode			= "Hotspot", // MaxLen: 16
 .built					= "Erstellt", // MaxLen: 16
 .zones					= "Zonen", // MaxLen: 16
 .keypad					= "Tasten", // MaxLen: 12 (with .ptt)
@@ -64,7 +73,7 @@ const stringsTable_t germanLanguage =
 .error					= "FEHLER", // MaxLen: 8
 .rx_only				= "Nur Rx", // MaxLen: 16
 .out_of_band			= "AUSSER BAND", // MaxLen: 16
-.timeout				= "Zeit abgelaufen", // MaxLen: 8
+.timeout				= "Timeout", // MaxLen: 8
 .tg_entry				= "TG Eingabe", // MaxLen: 15
 .pc_entry				= "PC Eingabe", // MaxLen: 15
 .user_dmr_id			= "Benutzer ID", // MaxLen: 15
@@ -97,16 +106,16 @@ const stringsTable_t germanLanguage =
 .bandwidth				= "Bandbreite", // MaxLen: 16 (with ':' + .n_a, "25kHz" or "12.5kHz")
 .stepFreq				= "Schritt", // MaxLen: 7 (with ':' + xx.xxkHz fitted)
 .tot					= "TOT", // MaxLen: 16 (with ':' + .off or 15..3825)
-.off					= "Aus", // MaxLen: 16 (with ':' + .timeout_beep, .calibration or .band_limits)
+.off					= "Aus", // MaxLen: 16 (with ':' + .timeout_beep, .band_limits)
 .zone_skip				= "Skip Zone", // MaxLen: 16 (with ':' + .yes or .no) 
 .all_skip				= "Skip Alle", // MaxLen: 16 (with ':' + .yes or .no)
 .yes					= "Ja", // MaxLen: 16 (with ':' + .zone_skip, .all_skip)
 .no						= "Nein", // MaxLen: 16 (with ':' + .zone_skip, .all_skip)
 .rx_group				= "Rx Gruppe", // MaxLen: 16 (with ':' and codeplug group name)
-.on						= "Ein", // MaxLen: 16 (with ':' + .calibration or .band_limits)
+.on						= "Ein", // MaxLen: 16 (with ':' + .band_limits)
 .timeout_beep			= "Timeout-Ton", // MaxLen: 16 (with ':' + .off or 5..20)
-.UNUSED_1				= "",
-.calibration			= "Kalibration", // MaxLen: 16 (with ':' + .on or .off)
+.list_full				= "Liste voll",
+.UNUSED_1			= "",
 .band_limits			= "Band Limit", // MaxLen: 16 (with ':' + .on or .off)
 .beep_volume			= "Beep Lauts", // MaxLen: 16 (with ':' + -24..6 + 'dB')
 .dmr_mic_gain			= "DMR Mikro", // MaxLen: 16 (with ':' + -33..12 + 'dB')
@@ -153,9 +162,9 @@ const stringsTable_t germanLanguage =
 .both					= "Beide", // MaxLen 16 (with ':' + .dmr_beep)
 .vox_threshold                          = "VOX Empf.", // MaxLen 16 (with ':' + .off or 1..30)
 .vox_tail                               = "VOX Dauer", // MaxLen 16 (with ':' + .n_a or '0.0s')
-.audio_prompt				= "Ansage",// Maxlen 16 (with ':' + .silent, .normal, .beep or .voice_prompt_level_1)
+.audio_prompt				= "Ansage",// Maxlen 16 (with ':' + .silent, .beep or .voice_prompt_level_1)
 .silent                                 = "Still", // Maxlen 16 (with : + audio_prompt)
-.normal                                 = "Normal", // Maxlen 16 (with : + audio_prompt)
+.UNUSED_2			= "",
 .beep					= "Töne", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_1					= "Stimme L1", // Maxlen 16 (with : + audio_prompt)
 .transmitTalkerAlias	= "TA senden", // Maxlen 16 (with : + .on or .off)
@@ -171,7 +180,7 @@ const stringsTable_t germanLanguage =
 .voice_prompt_level_2	= "Stimme L2", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_3	= "Stimme L3", // Maxlen 16 (with : + audio_prompt)
 .dmr_filter				= "DMR Filter",// MaxLen: 12 (with ':' + settings: "TG" or "Ct" or "RxG")
-.dmr_cc_filter			= "CC Filter", // MaxLen: 12 (with ':' + settings: .on or .off)
+.UNUSED_4				= "",
 .dmr_ts_filter			= "TS Filter", // MaxLen: 12 (with ':' + settings: .on or .off)
 .dtmf_contact_list			= "FM DTMF Kontakte", // Maxlen: 16
 .channel_power				= "Ch Leist.", //Displayed as "Ch Power:" + .from_master or "Ch Power:"+ power text e.g. "Power:500mW" . Max total length 16
@@ -183,9 +192,9 @@ const stringsTable_t germanLanguage =
 .user_power				= "User Power",
 .temperature				= "Temperatur", // MaxLen: 16 (with ':' + .celcius or .fahrenheit)
 .celcius				= "°C",
-.seconds				= "sekunden",
+.seconds				= "Sekunden",
 .radio_info				= "Radio Infos",
-.temperature_calibration		= "Temp Kal",
+.temperature_calibration		= "Temp.Kal", // MaxLen: 8
 .pin_code				= "Pin Code",
 .please_confirm				= "Bitte bestätigen", // MaxLen: 15
 .vfo_freq_bind_mode			= "Freq. Bind",
@@ -193,7 +202,39 @@ const stringsTable_t germanLanguage =
 .eco_level				= "Eco Stufe",
 .buttons				= "Tasten",
 .leds					= "LEDs",
-.scan_dwell_time		= "Scan dwell"
+.scan_dwell_time			= "Scan Halt",
+.battery_calibration			= "Batt. Kal", // MaxLen: 9
+.low					= "Nieder",
+.high					= "Hoch",
+.dmr_id					= "DMR ID",
+.scan_on_boot				= "Scan @ Start", //Maxlen: 12 chars
+.dtmf_entry				= "DTMF entry",
+.name					= "Name",
+.UNUSED_3				= "",
+.openDM1801A 				= "OpenDM1801A", // Do not translate
+.time					= "Zeit",
+.uptime					= "Uptime",
+.hours					= "Stunden",
+.minutes				= "Minuten",
+.satellite				= "Satellit",
+.alarm_time				= "Alarmzeit",
+.location				= "Standort",
+.date					= "Datum",
+.timeZone				= "Zeitzone",
+.suspend				= "Standby",
+.pass					= "Pass", // For satellite screen
+.elevation				= "El",
+.azimuth				= "Az",
+.inHHMMSS				= "in",
+.predicting				= "Prognose",
+.maximum				= "Max",
+.satellite_short			= "Sat",
+.local					= "Lokal",
+.UTC					= "UTC",
+.symbols				= "NSOW", // symbols: N,S,E,W
+.not_set				= "NICHT GESETZT",
+.general_options			= "Einstellungen",
+.radio_options				= "Radio Optionen"
 };
 /********************************************************************
  *

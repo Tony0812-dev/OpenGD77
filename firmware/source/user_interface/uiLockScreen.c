@@ -1,19 +1,29 @@
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 #include "user_interface/menuSystem.h"
 #include "user_interface/uiLocalisation.h"
@@ -36,7 +46,7 @@ menuStatus_t menuLockScreen(uiEvent_t *ev, bool isFirstRun)
 
 	if (isFirstRun)
 	{
-		m = fw_millis();
+		m = ticksGetMillis();
 
 		updateScreen(lockDisplayed);
 	}
@@ -53,7 +63,7 @@ menuStatus_t menuLockScreen(uiEvent_t *ev, bool isFirstRun)
 
 		if (ev->hasEvent)
 		{
-			m = fw_millis(); // reset timer on each key button/event.
+			m = ticksGetMillis(); // reset timer on each key button/event.
 
 			handleEvent(ev);
 		}
@@ -66,13 +76,13 @@ static void redrawScreen(bool update, bool state)
 	if (update)
 	{
 		// Clear inner rect only
-		ucFillRoundRect(5, 3, 118, DISPLAY_SIZE_Y - 8, 5, false);
+		displayFillRoundRect(5, 3, 118, DISPLAY_SIZE_Y - 8, 5, false);
 	}
 	else
 	{
 		// Clear whole screen
-		ucClearBuf();
-		ucDrawRoundRectWithDropShadow(4, 4, 120, DISPLAY_SIZE_Y - 6, 5, true);
+		displayClearBuf();
+		displayDrawRoundRectWithDropShadow(4, 4, 120, DISPLAY_SIZE_Y - 6, 5, true);
 	}
 
 	if (state)
@@ -98,17 +108,16 @@ static void redrawScreen(bool update, bool state)
 		}
 		buf[bufferLen - 1] = 0;
 
-		ucPrintCentered(6, buf, FONT_SIZE_3);
+		displayPrintCentered(6, buf, FONT_SIZE_3);
 
 #if defined(PLATFORM_RD5R)
-
-		ucPrintCentered(14, currentLanguage->locked, FONT_SIZE_3);
-		ucPrintCentered(24, currentLanguage->press_blue_plus_star, FONT_SIZE_1);
-		ucPrintCentered(32, currentLanguage->to_unlock, FONT_SIZE_1);
+		displayPrintCentered(14, currentLanguage->locked, FONT_SIZE_3);
+		displayPrintCentered(24, currentLanguage->press_blue_plus_star, FONT_SIZE_1);
+		displayPrintCentered(32, currentLanguage->to_unlock, FONT_SIZE_1);
 #else
-		ucPrintCentered(22, currentLanguage->locked, FONT_SIZE_3);
-		ucPrintCentered(40, currentLanguage->press_blue_plus_star, FONT_SIZE_1);
-		ucPrintCentered(48, currentLanguage->to_unlock, FONT_SIZE_1);
+		displayPrintCentered(22, currentLanguage->locked, FONT_SIZE_3);
+		displayPrintCentered(40, currentLanguage->press_blue_plus_star, FONT_SIZE_1);
+		displayPrintCentered(48, currentLanguage->to_unlock, FONT_SIZE_1);
 #endif
 
 		voicePromptsInit();
@@ -127,15 +136,20 @@ static void redrawScreen(bool update, bool state)
 		}
 
 		voicePromptsAppendLanguageString(&currentLanguage->locked);
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
-		voicePromptsAppendLanguageString(&currentLanguage->press_blue_plus_star);
-		voicePromptsAppendLanguageString(&currentLanguage->to_unlock);
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
+
+		if (nonVolatileSettings.audioPromptMode > AUDIO_PROMPT_MODE_VOICE_LEVEL_2)
+		{
+			voicePromptsAppendPrompt(PROMPT_SILENCE);
+			voicePromptsAppendLanguageString(&currentLanguage->press_blue_plus_star);
+			voicePromptsAppendLanguageString(&currentLanguage->to_unlock);
+			voicePromptsAppendPrompt(PROMPT_SILENCE);
+		}
+
 		voicePromptsPlay();
 	}
 	else
 	{
-		ucPrintCentered((DISPLAY_SIZE_Y - 16) / 2, currentLanguage->unlocked, FONT_SIZE_3);
+		displayPrintCentered((DISPLAY_SIZE_Y - 16) / 2, currentLanguage->unlocked, FONT_SIZE_3);
 
 		voicePromptsInit();
 		voicePromptsAppendPrompt(PROMPT_SILENCE);
@@ -144,7 +158,7 @@ static void redrawScreen(bool update, bool state)
 		voicePromptsPlay();
 	}
 
-	ucRender();
+	displayRender();
 	lockDisplayed = true;
 }
 

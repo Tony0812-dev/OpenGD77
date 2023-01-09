@@ -1,19 +1,29 @@
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 #include "functions/codeplug.h"
 #include "main.h"
@@ -43,13 +53,16 @@ static void handleEvent(uiEvent_t *ev);
 static struct_codeplugContact_t     contact;
 static struct_codeplugDTMFContact_t dtmfContact;
 
-static int contactListType;
-static int contactCallType;
+static contactListContactType_t contactListType = MENU_CONTACT_LIST_CONTACT_DIGITAL;
+static uint32_t contactCallType;
 static contactListState_t contactListDisplayState;
 static contactListState_t contactListOverrideState = MENU_CONTACT_LIST_DISPLAY;
-static int contactListTimeout;
+static int menuContactListTimeout; // Action result screen autohide timeout (or it will instantly disappear if RED or GREEN is pressed)
 static menuStatus_t menuContactListExitCode = MENU_STATUS_SUCCESS;
 static menuStatus_t menuContactListSubMenuExitCode = MENU_STATUS_SUCCESS;
+
+
+static const char * const *calltypeVoices[3] = { NULL, NULL, NULL };
 
 // Apply contact + its TS on selection for TX (contact list of quick list).
 static void overrideWithSelectedContact(void)
@@ -60,7 +73,7 @@ static void overrideWithSelectedContact(void)
 	if ((contactListContactData.reserve1 & 0x01) == 0x00)
 	{
 		int ts = ((contactListContactData.reserve1 & 0x02) >> 1);
-		trxSetDMRTimeSlot(ts);
+		trxSetDMRTimeSlot(ts, true);
 		tsSetManualOverride(((menuSystemGetRootMenuNumber() == UI_CHANNEL_MODE) ? CHANNEL_CHANNEL : (CHANNEL_VFO_A + nonVolatileSettings.currentVFONumber)), (ts + 1));
 	}
 }
@@ -89,6 +102,12 @@ menuStatus_t menuContactList(uiEvent_t *ev, bool isFirstRun)
 {
 	if (isFirstRun)
 	{
+		calltypeVoices[0] = &currentLanguage->group_call;
+		calltypeVoices[1] = &currentLanguage->private_call;
+		calltypeVoices[2] = &currentLanguage->all_call;
+
+		menuContactListTimeout = 0;
+
 		if (contactListOverrideState == MENU_CONTACT_LIST_DISPLAY)
 		{
 			if (uiDataGlobal.currentSelectedContactIndex == 0)
@@ -119,21 +138,25 @@ menuStatus_t menuContactList(uiEvent_t *ev, bool isFirstRun)
 			contactListDisplayState = MENU_CONTACT_LIST_DISPLAY;
 
 			voicePromptsInit();
-			voicePromptsAppendPrompt(PROMPT_SILENCE);
-			voicePromptsAppendPrompt(PROMPT_SILENCE);
-			if (contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL)
+			if (menuSystemGetCurrentMenuNumber() == MENU_CONTACT_QUICKLIST)
 			{
-				voicePromptsAppendLanguageString(&currentLanguage->contacts);
-				voicePromptsAppendLanguageString(&currentLanguage->menu);
-				voicePromptsAppendPrompt(PROMPT_SILENCE);
+				if (contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL)
+				{
+					voicePromptsAppendLanguageString(&currentLanguage->dmr_contacts);
+					voicePromptsAppendPrompt(PROMPT_SILENCE);
+					voicePromptsAppendLanguageString(calltypeVoices[contactCallType]);
+				}
+				else
+				{
+					voicePromptsAppendLanguageString(&currentLanguage->dtmf_contact_list);
+				}
 				voicePromptsAppendPrompt(PROMPT_SILENCE);
 			}
 			else
 			{
-				if (menuSystemGetCurrentMenuNumber() == MENU_CONTACT_QUICKLIST)
+				if (contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL)
 				{
-					voicePromptsAppendLanguageString(&currentLanguage->dtmf_contact_list);
-					voicePromptsAppendPrompt(PROMPT_SILENCE);
+					voicePromptsAppendLanguageString(calltypeVoices[contactCallType]);
 					voicePromptsAppendPrompt(PROMPT_SILENCE);
 				}
 			}
@@ -159,7 +182,7 @@ menuStatus_t menuContactList(uiEvent_t *ev, bool isFirstRun)
 	{
 		menuContactListExitCode = MENU_STATUS_SUCCESS;
 
-		if (ev->hasEvent || (contactListTimeout > 0))
+		if (ev->hasEvent || (menuContactListTimeout > 0))
 		{
 			handleEvent(ev);
 		}
@@ -178,24 +201,18 @@ static void updateScreen(bool isFirstRun)
 	int idx;
 	const char *calltypeName[] = { currentLanguage->group_call, currentLanguage->private_call, currentLanguage->all_call, "DTMF" };
 
-	ucClearBuf();
+	displayClearBuf();
 
 	switch (contactListDisplayState)
 	{
 		case MENU_CONTACT_LIST_DISPLAY:
 			menuDisplayTitle((char *) calltypeName[((contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL) ? contactCallType : 3)]);
 
-			if (!isFirstRun)
-			{
-				voicePromptsInit();
-			}
-
 			if (menuDataGlobal.endIndex == 0)
 			{
-				ucPrintCentered((DISPLAY_SIZE_Y / 2), currentLanguage->empty_list, FONT_SIZE_3);
+				displayPrintCentered((DISPLAY_SIZE_Y / 2), currentLanguage->empty_list, FONT_SIZE_3);
 
 				voicePromptsAppendLanguageString(&currentLanguage->empty_list);
-				promptsPlayNotAfterTx();
 			}
 			else
 			{
@@ -214,33 +231,43 @@ static void updateScreen(bool isFirstRun)
 
 					if (i == 0)
 					{
-						voicePromptsAppendString(nameBuf);
-						promptsPlayNotAfterTx();
+						if (strlen(nameBuf))
+						{
+							voicePromptsAppendString(nameBuf);
+						}
+						else
+						{
+							voicePromptsAppendLanguageString(&currentLanguage->name);
+							voicePromptsAppendPrompt(PROMPT_SILENCE);
+							voicePromptsAppendLanguageString(&currentLanguage->none);
+						}
 					}
 				}
+
 			}
+			promptsPlayNotAfterTx();
 			break;
 		case MENU_CONTACT_LIST_CONFIRM:
 			codeplugUtilConvertBufToString(contactListContactData.name, nameBuf, 16);
 			menuDisplayTitle(nameBuf);
-			ucPrintCentered(16, currentLanguage->delete_contact_qm, FONT_SIZE_3);
-			ucDrawChoice(CHOICE_YESNO, false);
+			displayPrintCentered(16, currentLanguage->delete_contact_qm, FONT_SIZE_3);
+			displayDrawChoice(CHOICE_YESNO, false);
 			break;
 		case MENU_CONTACT_LIST_DELETED:
 			codeplugUtilConvertBufToString(contactListContactData.name, nameBuf, 16);
-			ucPrintCentered(16, currentLanguage->contact_deleted, FONT_SIZE_3);
-			ucDrawChoice(CHOICE_DISMISS, false);
+			displayPrintCentered(16, currentLanguage->contact_deleted, FONT_SIZE_3);
+			displayDrawChoice(CHOICE_DISMISS, false);
 			break;
 		case MENU_CONTACT_LIST_TG_IN_RXGROUP:
 			codeplugUtilConvertBufToString(contactListContactData.name, nameBuf, 16);
 			menuDisplayTitle(nameBuf);
-			ucPrintCentered(16, currentLanguage->contact_used, FONT_SIZE_3);
-			ucPrintCentered((DISPLAY_SIZE_Y/2), currentLanguage->in_rx_group, FONT_SIZE_3);
-			ucDrawChoice(CHOICE_DISMISS, false);
+			displayPrintCentered(16, currentLanguage->contact_used, FONT_SIZE_3);
+			displayPrintCentered((DISPLAY_SIZE_Y/2), currentLanguage->in_rx_group, FONT_SIZE_3);
+			displayDrawChoice(CHOICE_DISMISS, false);
 			break;
 	}
 
-	ucRender();
+	displayRender();
 }
 
 static void handleEvent(uiEvent_t *ev)
@@ -254,13 +281,14 @@ static void handleEvent(uiEvent_t *ev)
 	}
 
 	// DTMF sequence is playing, stop it.
-	if (uiDataGlobal.DTMFContactList.isKeying && ((ev->keys.key != 0) || BUTTONCHECK_DOWN(ev, BUTTON_PTT)
+	if (dtmfSequenceIsKeying() && ((ev->keys.key != 0) || BUTTONCHECK_DOWN(ev, BUTTON_PTT)
 #if ! defined(PLATFORM_RD5R)
 													|| BUTTONCHECK_DOWN(ev, BUTTON_ORANGE)
 #endif
 	))
 	{
-		uiDataGlobal.DTMFContactList.poLen = 0U;
+		dtmfSequenceStop();
+		keyboardReset();
 		return;
 	}
 
@@ -273,6 +301,7 @@ static void handleEvent(uiEvent_t *ev)
 				uiDataGlobal.currentSelectedContactIndex = (contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL)
 						? codeplugContactGetDataForNumberInType(menuDataGlobal.currentItemIndex + 1, contactCallType, &contactListContactData)
 						: codeplugDTMFContactGetDataForNumber(menuDataGlobal.currentItemIndex + 1, &contactListDTMFContactData);
+				voicePromptsInit();
 				updateScreen(false);
 				menuContactListExitCode |= MENU_STATUS_LIST_TYPE;
 			}
@@ -282,6 +311,7 @@ static void handleEvent(uiEvent_t *ev)
 				uiDataGlobal.currentSelectedContactIndex = (contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL)
 						? codeplugContactGetDataForNumberInType(menuDataGlobal.currentItemIndex + 1, contactCallType, &contactListContactData)
 						: codeplugDTMFContactGetDataForNumber(menuDataGlobal.currentItemIndex + 1, &contactListDTMFContactData);
+				voicePromptsInit();
 				updateScreen(false);
 				menuContactListExitCode |= MENU_STATUS_LIST_TYPE;
 			}
@@ -289,8 +319,13 @@ static void handleEvent(uiEvent_t *ev)
 			{
 				if (contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL)
 				{
-					contactCallType = (contactCallType + 1) % 3;
+					contactCallType = (contactCallType + 1) % (CONTACT_CALLTYPE_ALL + 1);
 					reloadContactList(contactListType);
+
+					voicePromptsInit();
+					voicePromptsAppendLanguageString(calltypeVoices[contactCallType]);
+					voicePromptsAppendPrompt(PROMPT_SILENCE);
+
 					updateScreen(false);
 				}
 			}
@@ -372,7 +407,7 @@ static void handleEvent(uiEvent_t *ev)
 				contact.callType = 0xFF;
 				codeplugContactSaveDataForIndex(uiDataGlobal.currentSelectedContactIndex, &contact);
 				uiDataGlobal.currentSelectedContactIndex = 0;
-				contactListTimeout = 2000;
+				menuContactListTimeout = 2000;
 				contactListDisplayState = MENU_CONTACT_LIST_DELETED;
 				reloadContactList(contactListType);
 				updateScreen(false);
@@ -389,13 +424,14 @@ static void handleEvent(uiEvent_t *ev)
 
 		case MENU_CONTACT_LIST_DELETED:
 		case MENU_CONTACT_LIST_TG_IN_RXGROUP:
-			contactListTimeout--;
-			if ((contactListTimeout == 0) || KEYCHECK_SHORTUP(ev->keys, KEY_GREEN) || KEYCHECK_SHORTUP(ev->keys, KEY_RED))
+			menuContactListTimeout--;
+			if ((menuContactListTimeout == 0) || KEYCHECK_SHORTUP(ev->keys, KEY_GREEN) || KEYCHECK_SHORTUP(ev->keys, KEY_RED))
 			{
+				menuContactListTimeout = 0;
 				contactListDisplayState = MENU_CONTACT_LIST_DISPLAY;
 				reloadContactList(contactListType);
+				updateScreen(false);
 			}
-			updateScreen(false);
 			break;
 	}
 }
@@ -411,13 +447,12 @@ enum CONTACT_LIST_QUICK_MENU_ITEMS
 static void updateSubMenuScreen(void)
 {
 	int mNum = 0;
-	static const int bufferLen = 17;
-	char buf[bufferLen];
+	char buf[SCREEN_LINE_BUFFER_SIZE];
 	char * const *langTextConst = NULL;// initialise to please the compiler
 
 	voicePromptsInit();
 
-	ucClearBuf();
+	displayClearBuf();
 
 	codeplugUtilConvertBufToString((contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL) ? contactListContactData.name : contactListDTMFContactData.name, buf, 16);
 	menuDisplayTitle(buf);
@@ -442,11 +477,11 @@ static void updateSubMenuScreen(void)
 
 		if (langTextConst != NULL)
 		{
-			strncpy(buf, *langTextConst, 17);
+			strncpy(buf, *langTextConst, SCREEN_LINE_BUFFER_SIZE);
 		}
 		else
 		{
-			strncpy(buf, " ", 17);
+			strncpy(buf, " ", SCREEN_LINE_BUFFER_SIZE);
 		}
 
 		if ((i == 0) && (langTextConst != NULL))
@@ -458,7 +493,7 @@ static void updateSubMenuScreen(void)
 		menuDisplayEntry(i, mNum, buf);
 	}
 
-	ucRender();
+	displayRender();
 }
 
 static void handleSubMenuEvent(uiEvent_t *ev)
@@ -524,21 +559,21 @@ static void handleSubMenuEvent(uiEvent_t *ev)
 				{
 					if (contactListType == MENU_CONTACT_LIST_CONTACT_DIGITAL)
 					{
+						voicePromptsInit();
 						if ((contactListContactData.callType == CONTACT_CALLTYPE_TG) &&
 								codeplugContactGetRXGroup(contactListContactData.NOT_IN_CODEPLUGDATA_indexNumber))
 						{
-							contactListTimeout = 2000;
+							menuContactListTimeout = 2000;
 							contactListOverrideState = MENU_CONTACT_LIST_TG_IN_RXGROUP;
 							voicePromptsAppendLanguageString(&currentLanguage->contact_used);
 							voicePromptsAppendLanguageString(&currentLanguage->in_rx_group);
-							voicePromptsPlay();
 						}
 						else
 						{
 							contactListOverrideState = MENU_CONTACT_LIST_CONFIRM;
 							voicePromptsAppendLanguageString(&currentLanguage->delete_contact_qm);
-							voicePromptsPlay();
 						}
+						voicePromptsPlay();
 					}
 					menuSystemPopPreviousMenu();
 				}
@@ -569,6 +604,7 @@ menuStatus_t menuContactListSubMenu(uiEvent_t *ev, bool isFirstRun)
 {
 	if (isFirstRun)
 	{
+		menuDataGlobal.currentItemIndex = 0;
 		updateSubMenuScreen();
 		keyboardInit();
 		menuContactListSubMenuExitCode = (MENU_STATUS_LIST_TYPE | MENU_STATUS_SUCCESS);

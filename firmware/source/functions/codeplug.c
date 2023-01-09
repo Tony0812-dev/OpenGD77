@@ -1,19 +1,30 @@
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019      Kai Ludwig, DG4KLU
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #include <stdint.h>
@@ -24,6 +35,7 @@
 #include "functions/trx.h"
 #include "usb/usb_com.h"
 #include "user_interface/uiLocalisation.h"
+#include "user_interface/uiGlobals.h"
 
 
 const int CODEPLUG_ADDR_EX_ZONE_BASIC = 0x8000;
@@ -64,6 +76,8 @@ const int CODEPLUG_ADDR_VFO_A_CHANNEL = 0x7590;
 int codeplugChannelsPerZone = 16;
 
 const int VFO_FREQ_STEP_TABLE[8] = {250,500,625,1000,1250,2500,3000,5000};
+const int VFO_SWEEP_SCAN_RANGE_SAMPLE_STEP_TABLE[7] = {78,157,313,625, 1250,2500,5000};
+
 
 const int CODEPLUG_MAX_VARIABLE_SQUELCH = 21;
 const int CODEPLUG_MIN_VARIABLE_SQUELCH = 1;
@@ -123,7 +137,7 @@ uint32_t byteSwap16(uint16_t n)
 // BCD encoding to integer conversion
 uint32_t bcd2int(uint32_t i)
 {
-    int result = 0;
+    uint32_t result = 0;
     int multiplier = 1;
     while (i)
     {
@@ -135,44 +149,15 @@ uint32_t bcd2int(uint32_t i)
 }
 
 // Needed to convert the legacy DMR ID data which uses BCD encoding for the DMR ID numbers
-int int2bcd(int i)
+uint32_t int2bcd(uint32_t i)
 {
-    int result = 0;
+	uint32_t result = 0;
     int shift = 0;
 
     while (i)
     {
         result +=  (i % 10) << shift;
         i = i / 10;
-        shift += 4;
-    }
-    return result;
-}
-
-// Binary-coded Octal encoding to integer conversion
-// DCS codes are stored in the codeplug as binary-coded octal
-uint16_t bco2int(uint16_t i)
-{
-    uint16_t result = 0;
-    uint16_t multiplier = 1;
-    while (i)
-    {
-        result += (i & 0x0f) * multiplier;
-        multiplier *= 8;
-        i = i >> 4;
-    }
-    return result;
-}
-
-uint16_t int2bco(uint16_t i)
-{
-    uint16_t result = 0;
-    uint16_t shift = 0;
-
-    while (i)
-    {
-        result += (i % 8) << shift;
-        i = i / 8;
         shift += 4;
     }
     return result;
@@ -191,43 +176,55 @@ uint16_t bcd2uint16(uint16_t i)
     return result;
 }
 
-bool codeplugChannelToneIsCTCSS(uint16_t tone)
+CodeplugCSSTypes_t codeplugGetCSSType(uint16_t tone)
 {
-	return ((tone != CODEPLUG_CSS_NONE) && !(tone & CODEPLUG_DCS_FLAGS_MASK));
-}
+	if ((tone == CODEPLUG_CSS_TONE_NONE) || (tone == 0x0))
+	{
+		return CSS_TYPE_NONE;
+	}
+	else if((tone != CODEPLUG_CSS_TONE_NONE) && (tone != 0x0))
+	{
+		if ((tone & CSS_TYPE_DCS_MASK) == 0)
+		{
+			return CSS_TYPE_CTCSS;
+		}
+		else if (tone & CSS_TYPE_DCS_INVERTED)
+		{
+			return (CSS_TYPE_DCS | CSS_TYPE_DCS_INVERTED);
+		}
 
-bool codeplugChannelToneIsDCS(uint16_t tone)
-{
-	// Could be improved to validate the rest of the field
-	return ((tone != CODEPLUG_CSS_NONE) && (tone & CODEPLUG_DCS_FLAGS_MASK));
+		return CSS_TYPE_DCS;
+	}
+
+	return CSS_TYPE_NONE;
 }
 
 // Converts a codeplug coded-squelch system value to int (with flags if DCS)
-uint16_t codeplugCSSToInt(uint16_t css)
+uint16_t codeplugCSSToInt(uint16_t tone)
 {
-	if (codeplugChannelToneIsCTCSS(css))
+	CodeplugCSSTypes_t type = codeplugGetCSSType(tone);
+
+	// Only the CTCSS needs convertion
+	if (type == CSS_TYPE_CTCSS)
 	{
-		return bcd2int(css);
+		return bcd2int(tone);
 	}
-	else if (codeplugChannelToneIsDCS(css))
-	{
-		return bco2int(css & ~CODEPLUG_DCS_FLAGS_MASK) | (css & CODEPLUG_DCS_FLAGS_MASK);
-	}
-	return css;
+
+	return tone;
 }
 
 // Converts an int (with flags if DCS) to codeplug coded-squelch system value
-uint16_t codeplugIntToCSS(uint16_t i)
+uint16_t codeplugIntToCSS(uint16_t tone)
 {
-	if (codeplugChannelToneIsCTCSS(i))
+	CodeplugCSSTypes_t type = codeplugGetCSSType(tone);
+
+	// Only the CTCSS needs convertion
+	if (type == CSS_TYPE_CTCSS)
 	{
-		return int2bcd(i);
+		return int2bcd(tone);
 	}
-	else if (codeplugChannelToneIsDCS(i))
-	{
-		return int2bco(i & ~CODEPLUG_DCS_FLAGS_MASK) | (i & CODEPLUG_DCS_FLAGS_MASK);
-	}
-	return i;
+
+	return tone;
 }
 
 void codeplugUtilConvertBufToString(char *codeplugBuf, char *outBuf, int len)
@@ -448,6 +445,45 @@ void codeplugAllChannelsInitCache(void)
 	}
 }
 
+uint32_t codeplugChannelGetOptionalDMRID(struct_codeplugChannel_t *channelBuf)
+{
+	uint32_t retVal = 0;
+
+	if (channelBuf->LibreDMR_flag1 & 0x80)
+	{
+		retVal = ((channelBuf->rxSignaling << 16) | (channelBuf->artsInterval << 8) | channelBuf->encrypt);
+	}
+
+	return retVal;
+}
+
+void codeplugChannelSetOptionalDMRID(uint32_t dmrID, struct_codeplugChannel_t *channelBuf)
+{
+	uint32_t tmpID = 0x00001600;
+
+	//  Default values are:
+	//
+	//	rxSignaling = 0x00  e.g. SignalingSystemE.Off
+	//  artsInterval = 22 = 0x16
+	//  encrypt = 0x00;
+	//
+
+	// Set DMRId and flag, if valid.
+	if ((dmrID >= MIN_TG_OR_PC_VALUE) && (dmrID <= MAX_TG_OR_PC_VALUE))
+	{
+		channelBuf->LibreDMR_flag1 |= 0x80;
+		tmpID = dmrID;
+	}
+	else
+	{
+		channelBuf->LibreDMR_flag1 &= ~0x80;
+	}
+
+	channelBuf->rxSignaling = (tmpID >> 16) & 0xFF;
+	channelBuf->artsInterval = (tmpID >> 8) & 0xFF;
+	channelBuf->encrypt = tmpID & 0xFF;
+}
+
 void codeplugChannelGetDataWithOffsetAndLengthForIndex(int index, struct_codeplugChannel_t *channelBuf, uint8_t offset, int length)
 {
 	// lower 128 channels are in EEPROM. Remaining channels are in Flash ! (What a mess...)
@@ -637,7 +673,7 @@ int codeplugDTMFContactsGetCount(void)
 	return codeplugContactsCache.numDTMFContacts;
 }
 
-int codeplugContactsGetCount(int callType) // 0:TG 1:PC 2:ALL
+int codeplugContactsGetCount(uint32_t callType) // 0:TG 1:PC 2:ALL
 {
 	switch (callType)
 	{
@@ -655,20 +691,23 @@ int codeplugContactsGetCount(int callType) // 0:TG 1:PC 2:ALL
 	return 0; // Should not happen
 }
 
+// Returns contact's index, or 0 on failure.
 int codeplugDTMFContactGetDataForNumber(int number, struct_codeplugDTMFContact_t *contact)
 {
 	if ((number >= CODEPLUG_DTMF_CONTACTS_MIN) && (number <= CODEPLUG_DTMF_CONTACTS_MAX))
 	{
-		codeplugDTMFContactGetDataForIndex(codeplugContactsCache.contactsDTMFLookupCache[number - 1].index, contact);
-		return number;
+		if (codeplugDTMFContactGetDataForIndex(codeplugContactsCache.contactsDTMFLookupCache[number - 1].index, contact))
+		{
+			return codeplugContactsCache.contactsDTMFLookupCache[number - 1].index;
+		}
 	}
 
 	return 0;
 }
 
-int codeplugContactGetDataForNumberInType(int number, int callType, struct_codeplugContact_t *contact)
+// Returns contact's index, or 0 on failure.
+int codeplugContactGetDataForNumberInType(int number, uint32_t callType, struct_codeplugContact_t *contact)
 {
-	int pos = 0;
 	int numContacts = codeplugContactsCache.numTGContacts + codeplugContactsCache.numALLContacts + codeplugContactsCache.numPCContacts;
 
 	for (int i = 0; i < numContacts; i++)
@@ -682,22 +721,21 @@ int codeplugContactGetDataForNumberInType(int number, int callType, struct_codep
 		{
 			if (codeplugContactGetDataForIndex(codeplugContactsCache.contactsLookupCache[i].index, contact))
 			{
-				pos = i + 1;
-				break;
+				return codeplugContactsCache.contactsLookupCache[i].index;
 			}
 		}
 	}
 
-	return pos;
+	return 0;
 }
 
 // optionalTS: 0 = no TS checking, 1..2 = TS
-int codeplugContactIndexByTGorPC(int tgorpc, int callType, struct_codeplugContact_t *contact, uint8_t optionalTS)
+int codeplugContactIndexByTGorPCFromNumber(int number, uint32_t tgorpc, uint32_t callType, struct_codeplugContact_t *contact, uint8_t optionalTS)
 {
 	int numContacts = codeplugContactsCache.numTGContacts + codeplugContactsCache.numALLContacts + codeplugContactsCache.numPCContacts;
 	int firstMatch = -1;
 
-	for (int i = 0; i < numContacts; i++)
+	for (int i = number; i < numContacts; i++)
 	{
 		if (((codeplugContactsCache.contactsLookupCache[i].tgOrPCNum & 0xFFFFFF) == tgorpc) &&
 				((codeplugContactsCache.contactsLookupCache[i].tgOrPCNum >> 24) == callType))
@@ -736,6 +774,12 @@ int codeplugContactIndexByTGorPC(int tgorpc, int callType, struct_codeplugContac
 	}
 
 	return -1;
+}
+
+// optionalTS: 0 = no TS checking, 1..2 = TS
+int codeplugContactIndexByTGorPC(uint32_t tgorpc, uint32_t callType, struct_codeplugContact_t *contact, uint8_t optionalTS)
+{
+	return codeplugContactIndexByTGorPCFromNumber(0, tgorpc, callType, contact, optionalTS);
 }
 
 bool codeplugContactsContainsPC(uint32_t pc)
@@ -980,7 +1024,7 @@ static bool codeplugContactGetReserve1ByteForIndex(int index, struct_codeplugCon
 
 bool codeplugContactGetDataForIndex(int index, struct_codeplugContact_t *contact)
 {
-	char buf[17];
+	char buf[SCREEN_LINE_BUFFER_SIZE];
 
 	if (((codeplugContactsCache.numTGContacts > 0) || (codeplugContactsCache.numPCContacts > 0) || (codeplugContactsCache.numALLContacts > 0)) &&
 			(index >= CODEPLUG_CONTACTS_MIN) && (index <= CODEPLUG_CONTACTS_MAX))
@@ -997,7 +1041,7 @@ bool codeplugContactGetDataForIndex(int index, struct_codeplugContact_t *contact
 	contact->callType = CONTACT_CALLTYPE_TG;
 	contact->reserve1 = 0xff;
 	contact->NOT_IN_CODEPLUGDATA_indexNumber = -1;
-	snprintf(buf, 17, "%s 9", currentLanguage->tg);
+	snprintf(buf, SCREEN_LINE_BUFFER_SIZE, "%s 9", currentLanguage->tg);
 	codeplugUtilConvertStringToBuf(buf, contact->name, 16);
 	return false;
 }
@@ -1101,9 +1145,9 @@ bool codeplugContactGetRXGroup(int index)
 	return false;
 }
 
-int codeplugGetUserDMRID(void)
+uint32_t codeplugGetUserDMRID(void)
 {
-	int dmrId;
+	uint32_t dmrId;
 	EEPROM_Read(CODEPLUG_ADDR_USER_DMRID, (uint8_t *)&dmrId, 4);
 	return bcd2int(byteSwap32(dmrId));
 }
@@ -1125,13 +1169,13 @@ void codeplugGetRadioName(char *buf)
 // Max length the user can enter is 16. Hence buf must be 17 chars to allow for the termination
 void codeplugGetBootScreenData(char *line1, char *line2, uint8_t *displayType)
 {
-	memset(line1, 0, 17);
-	memset(line2, 0, 17);
+	memset(line1, 0, SCREEN_LINE_BUFFER_SIZE);
+	memset(line2, 0, SCREEN_LINE_BUFFER_SIZE);
 
-	EEPROM_Read(CODEPLUG_ADDR_BOOT_LINE1, (uint8_t *)line1, 16);
-	codeplugUtilConvertBufToString(line1, line1, 16);
-	EEPROM_Read(CODEPLUG_ADDR_BOOT_LINE2, (uint8_t *)line2, 16);
-	codeplugUtilConvertBufToString(line2, line2, 16);
+	EEPROM_Read(CODEPLUG_ADDR_BOOT_LINE1, (uint8_t *)line1, (SCREEN_LINE_BUFFER_SIZE - 1));
+	codeplugUtilConvertBufToString(line1, line1, (SCREEN_LINE_BUFFER_SIZE - 1));
+	EEPROM_Read(CODEPLUG_ADDR_BOOT_LINE2, (uint8_t *)line2, (SCREEN_LINE_BUFFER_SIZE - 1));
+	codeplugUtilConvertBufToString(line2, line2, (SCREEN_LINE_BUFFER_SIZE - 1));
 
 	EEPROM_Read(CODEPLUG_ADDR_BOOT_INTRO_SCREEN, displayType, 1);// read the display type
 }
@@ -1200,9 +1244,15 @@ bool codeplugGetOpenGD77CustomData(codeplugCustomDataType_t dataType, uint8_t *d
 			SPI_Flash_read(dataHeaderAddress, (uint8_t *)&blockHeader, sizeof(codeplugCustomDataBlockHeader_t));
 			if (blockHeader.dataType == dataType)
 			{
-				SPI_Flash_read(dataHeaderAddress + sizeof(codeplugCustomDataBlockHeader_t), dataBuf,blockHeader.dataLength);
+				SPI_Flash_read(dataHeaderAddress + sizeof(codeplugCustomDataBlockHeader_t), dataBuf, blockHeader.dataLength);
 				return true;
 			}
+
+			if (blockHeader.dataLength == 0)
+			{
+				return false;
+			}
+
 			dataHeaderAddress += sizeof(codeplugCustomDataBlockHeader_t) + blockHeader.dataLength;
 
 		} while (dataHeaderAddress < MAX_BLOCK_ADDRESS);

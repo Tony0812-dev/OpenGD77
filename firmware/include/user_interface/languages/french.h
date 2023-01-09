@@ -1,20 +1,29 @@
 /* -*- coding: windows-1252-unix; -*- */
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 /*
  * Translators: F1CXG, F1RMB
@@ -44,8 +53,8 @@ const stringsTable_t frenchLanguage =
 .last_heard				= "Derniers reçus",
 .firmware_info				= "Info Firmware",
 .options				= "Options",
-.display_options			= "Options affich.",
-.sound_options				= "Options audio", // MaxLen: 16
+.display_options			= "Affichage",
+.sound_options				= "Audio", // MaxLen: 16
 .channel_details			= "Détails canal",
 .language				= "Langue",
 .new_contact				= "Nouv. contact",
@@ -105,8 +114,8 @@ const stringsTable_t frenchLanguage =
 .rx_group				= "Grp Rx",
 .on					= "On",
 .timeout_beep				= "Son timeout",
-.UNUSED_1				= "",
-.calibration				= "Étalonnage",
+.list_full				= "Liste pleine",
+.UNUSED_1			= "",
 .band_limits				= "Lim. Bandes",
 .beep_volume				= "Vol. bip",
 .dmr_mic_gain				= "DMR mic",
@@ -153,9 +162,9 @@ const stringsTable_t frenchLanguage =
 .both					= "Les Deux", // MaxLen 16 (with ':' + .dmr_beep)
 .vox_threshold                          = "Seuil VOX", // MaxLen 16 (with ':' + .off or 1..30)
 .vox_tail                               = "Queue VOX", // MaxLen 16 (with ':' + .n_a or '0.0s')
-.audio_prompt				= "Prompt",// Maxlen 16 (with ':' + .silent, .normal, .beep or .voice_prompt_level_1)
+.audio_prompt				= "Prompt",// Maxlen 16 (with ':' + .silent, .beep or .voice_prompt_level_1)
 .silent                                 = "Silence", // Maxlen 16 (with : + audio_prompt)
-.normal                                 = "Normal", // Maxlen 16 (with : + audio_prompt)
+.UNUSED_2			= "",
 .beep					= "Beep", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_1			= "Voix", // Maxlen 16 (with : + audio_prompt)
 .transmitTalkerAlias			= "Tx TA", // Maxlen 16 (with : + .on or .off)
@@ -171,7 +180,7 @@ const stringsTable_t frenchLanguage =
 .voice_prompt_level_2			= "Voix L2", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_3			= "Voix L3", // Maxlen 16 (with : + audio_prompt)
 .dmr_filter				= "Filtre DMR",// MaxLen: 12 (with ':' + settings: "TG" or "Ct" or "RxG")
-.dmr_cc_filter				= "Filtre CC", // MaxLen: 12 (with ':' + settings: .on or .off)
+.UNUSED_4				= "",
 .dmr_ts_filter				= "Filtre TS", // MaxLen: 12 (with ':' + settings: .on or .off)
 .dtmf_contact_list			= "Contacts DTMF FM", // Maxlen: 16
 .channel_power				= "Pce Canal", //Displayed as "Ch Power:" + .from_master or "Ch Power:"+ power text e.g. "Power:500mW" . Max total length 16
@@ -185,7 +194,7 @@ const stringsTable_t frenchLanguage =
 .celcius				= "°C",
 .seconds				= "secondes",
 .radio_info				= "Infos radio",
-.temperature_calibration		= "Etal. t°",
+.temperature_calibration		= "Étal. t°",
 .pin_code				= "Code Pin",
 .please_confirm				= "Confirmez", // MaxLen: 15
 .vfo_freq_bind_mode			= "Freq. Liées",
@@ -193,7 +202,39 @@ const stringsTable_t frenchLanguage =
 .eco_level				= "Niveau Eco",
 .buttons				= "Boutons",
 .leds					= "DELs",
-.scan_dwell_time			= "Durée Scan"
+.scan_dwell_time			= "Durée Scan",
+.battery_calibration			= "Étal. Bat.",
+.low					= "Bas",
+.high					= "Haut",
+.dmr_id					= "DMR ID",
+.scan_on_boot				= "Scan On Boot",
+.dtmf_entry				= "Entrez DTMF",
+.name					= "Nom",
+.UNUSED_3				= "",
+.openDM1801A 				= "OpenDM1801A", // Do not translate
+.time					= "Heure",
+.uptime					= "En Funct. Depuis",
+.hours					= "Heures",
+.minutes				= "Minutes",
+.satellite				= "Satellite",
+.alarm_time				= "Heure Alarme",
+.location				= "Emplacement",
+.date					= "Date",
+.timeZone				= "Fuseau",
+.suspend				= "Veille",
+.pass					= "Passe", // For satellite screen
+.elevation				= "El",
+.azimuth				= "Az",
+.inHHMMSS				= "ds",
+.predicting				= "Prédiction",
+.maximum				= "Max",
+.satellite_short			= "Sat",
+.local					= "Locale",
+.UTC					= "UTC",
+.symbols				= "NSEO", // symbols: N,S,E,W
+.not_set				= "NON DÉFINI",
+.general_options			= "Générales",
+.radio_options				= "Radio"
 };
 /********************************************************************
  *

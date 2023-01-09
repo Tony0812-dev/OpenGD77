@@ -1,26 +1,35 @@
 /* -*- coding: windows-1252-unix; -*- */
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 /*
  * Translators: IU4LEG, IZ2EIB
  *
  *
- * Rev: 2021.04.02 IZ2EIB  & IU4LEG
+ * Rev: 2021.09.11 IZ2EIB & IU4LEG
  */
 #ifndef USER_INTERFACE_LANGUAGES_ITALIAN_H_
 #define USER_INTERFACE_LANGUAGES_ITALIAN_H_
@@ -97,16 +106,16 @@ const stringsTable_t italianLanguage =
 .bandwidth				   = "Banda", // MaxLen: 16 (with ':' + .n_a, "25kHz" or "12.5kHz")
 .stepFreq				   = "Step", // MaxLen: 7 (with ':' + xx.xxkHz fitted)
 .tot					   = "TOT", // MaxLen: 16 (with ':' + .off or 15..3825)
-.off					   = "Off", // MaxLen: 16 (with ':' + .timeout_beep, .calibration or .band_limits)
+.off					   = "Off", // MaxLen: 16 (with ':' + .timeout_beep, .band_limits)
 .zone_skip				   = "Salta Zona", // MaxLen: 16 (with ':' + .yes or .no)
 .all_skip				   = "Salta Tutti",// MaxLen: 16 (with ':' + .yes or .no)
 .yes					   = "Sì", // MaxLen: 16 (with ':' + .zone_skip, .all_skip)
 .no						   = "No", // MaxLen: 16 (with ':' + .zone_skip, .all_skip)
 .rx_group				   = "Rx Grp", // MaxLen: 16 (with ':' and codeplug group name)
-.on						   = "On", // MaxLen: 16 (with ':' + .calibration or .band_limits)
+.on						   = "On", // MaxLen: 16 (with ':' + .band_limits)
 .timeout_beep			   = "Bip Timeout", // MaxLen: 16 (with ':' + .off or 5..20)
-.UNUSED_1				= "",
-.calibration			   = "Calibrazione", // MaxLen: 16 (with ':' + .on or .off)
+.list_full				= "List full",
+.UNUSED_1			= "",
 .band_limits			   = "Limiti Banda", // MaxLen: 16 (with ':' + .on or .off)
 .beep_volume			   = "Volume Bip", // MaxLen: 16 (with ':' + -24..6 + 'dB')
 .dmr_mic_gain			   = "DMR mic", // MaxLen: 16 (with ':' + -33..12 + 'dB')
@@ -153,9 +162,9 @@ const stringsTable_t italianLanguage =
 .both					   = "Ambedue", // MaxLen 16 (with ':' + .dmr_beep)
 .vox_threshold             = "Soglia VOX", // MaxLen 16 (with ':' + .off or 1..30)
 .vox_tail                  = "Coda VOX", // MaxLen 16 (with ':' + .n_a or '0.0s')
-.audio_prompt			   = "Guida",// Maxlen 16 (with ':' + .silent, .normal, .beep or .voice_prompt_level_1)
+.audio_prompt			   = "Guida",// Maxlen 16 (with ':' + .silent, .beep or .voice_prompt_level_1)
 .silent                    = "Silenziosa", // Maxlen 16 (with : + audio_prompt)
-.normal                    = "Normale", // Maxlen 16 (with : + audio_prompt)
+.UNUSED_2			= "",
 .beep					   = "Bip", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_1	   = "Voce L1", // Maxlen 16 (with : + audio_prompt)
 .transmitTalkerAlias	   = "TA Tx", // Maxlen 16 (with : + .on or .off)
@@ -171,7 +180,7 @@ const stringsTable_t italianLanguage =
 .voice_prompt_level_2	   = "Voce L2", // Maxlen 16 (with : + audio_prompt)
 .voice_prompt_level_3	   = "Voce L3", // Maxlen 16 (with : + audio_prompt)
 .dmr_filter				   = "Filtro DMR",// MaxLen: 12 (with ':' + settings: "TG" or "Ct" or "RxG")
-.dmr_cc_filter			   = "Filtro CC", // MaxLen: 12 (with ':' + settings: .on or .off)
+.UNUSED_4				= "",
 .dmr_ts_filter			   = "Filtro TS", // MaxLen: 12 (with ':' + settings: .on or .off)
 .dtmf_contact_list			= "FM DTMF contacts", // Maxlen: 16
 .channel_power				= "W Ch", //Displayed as "Ch Power:" + .from_master or "Ch Power:"+ power text e.g. "Power:500mW" . Max total length 16
@@ -193,7 +202,39 @@ const stringsTable_t italianLanguage =
 .eco_level				= "Grado consumi",
 .buttons				= "Bottoni",
 .leds					= "LED",
-.scan_dwell_time		= "Ciclo SCAN"
+.scan_dwell_time			= "Ciclo SCAN",
+.battery_calibration			= "Cal BATT.",
+.low					= "Bassa",
+.high					= "Alta",
+.dmr_id					= "2°idDMR",
+.scan_on_boot				= "Scan su ON",
+.dtmf_entry				= "Ins. DTMF",
+.name					= "Nome",
+.UNUSED_3				= "",
+.openDM1801A 				= "OpenDM1801A", // Do not translate
+.time					= "Orario",
+.uptime					= "Tempo Attività",
+.hours					= "Ore",
+.minutes				= "Minuti",
+.satellite				= "Satellite",
+.alarm_time				= "Allarme",
+.location				= "Posizione",
+.date					= "Data",
+.timeZone				= "Fuso orario",
+.suspend				= "Sospensione",
+.pass					= "Pass", // For satellite screen
+.elevation				= "El",
+.azimuth				= "Az",
+.inHHMMSS				= "in",
+.predicting				= "Previsione",
+.maximum				= "Max",
+.satellite_short		= "Sat",
+.local					= "Locale",
+.UTC					= "UTC",
+.symbols				= "NSEO", // symbols: N,S,E,W
+.not_set				= "NON IMPOSTATO",
+.general_options		= "Opzioni generali",
+.radio_options			= "Opzioni radio"
 };
 /********************************************************************
  *

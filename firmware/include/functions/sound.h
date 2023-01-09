@@ -1,19 +1,29 @@
 /*
- * Copyright (C)2019 Kai Ludwig, DG4KLU
+ * Copyright (C) 2019      Kai Ludwig, DG4KLU
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #ifndef _OPENGD77_SOUND_H_
@@ -22,7 +32,9 @@
 #include <FreeRTOS.h>
 #include <task.h>
 #include "interfaces/i2s.h"
+#include "interfaces/wdog.h"
 
+extern Task_t beepTask;
 
 extern int melody_generic[512];
 extern const int MELODY_POWER_ON[];
@@ -45,45 +57,42 @@ extern volatile int melody_idx;
 extern volatile int micAudioSamplesTotal;
 extern int soundBeepVolumeDivider;
 
-#define WAV_BUFFER_SIZE 0xa0
-#define WAV_BUFFER_COUNT 18
-#define HOTSPOT_BUFFER_SIZE 50
-#define HOTSPOT_BUFFER_COUNT 48
+#define WAV_BUFFER_SIZE                          160
+#define WAV_BUFFER_COUNT                          30 // 5 DMR frames, was 24
+#define WAV_BUFFER_AMBE_PREBUFFERING_COUNT        12 // 2 DMR frames, 6 buffers each
+#define HOTSPOT_BUFFER_SIZE                      50U
+#define HOTSPOT_BUFFER_COUNT                     48U
 
 extern union sharedDataBuffer
 {
-	volatile uint8_t wavbuffer[WAV_BUFFER_COUNT][WAV_BUFFER_SIZE];
-	volatile uint8_t hotspotBuffer[HOTSPOT_BUFFER_COUNT][HOTSPOT_BUFFER_SIZE];
-	volatile uint8_t rawBuffer[HOTSPOT_BUFFER_COUNT * HOTSPOT_BUFFER_SIZE];
+	volatile uint8_t wavbuffer[WAV_BUFFER_COUNT][WAV_BUFFER_SIZE]; // 3840
+	volatile uint8_t hotspotBuffer[HOTSPOT_BUFFER_COUNT][HOTSPOT_BUFFER_SIZE]; // 2400
+	volatile uint8_t rawBuffer[HOTSPOT_BUFFER_COUNT * HOTSPOT_BUFFER_SIZE]; // 2400
 } audioAndHotspotDataBuffer;
 
 extern volatile int wavbuffer_read_idx;
 extern volatile int wavbuffer_write_idx;
 extern volatile int wavbuffer_count;
-extern uint8_t *currentWaveBuffer;
-
-extern uint8_t spi_sound1[WAV_BUFFER_SIZE*2];
-extern uint8_t spi_sound2[WAV_BUFFER_SIZE*2];
-extern uint8_t spi_sound3[WAV_BUFFER_SIZE*2];
-extern uint8_t spi_sound4[WAV_BUFFER_SIZE*2];
+extern volatile uint8_t *currentWaveBuffer;
 
 extern volatile bool g_TX_SAI_in_use;
 
 extern uint8_t *spi_soundBuf;
-extern sai_transfer_t xfer;
 
 void soundInit(void);
 void soundTerminateSound(void);
 void soundSetMelody(const int *melody);
 void soundCreateSong(const uint8_t *melody);
 void soundInitBeepTask(void);
+bool soundRefillData(void);
 void soundSendData(void);
-void soundReceiveData(void);
+bool soundReceiveData(void);
 void soundStoreBuffer(void);
 void soundRetrieveBuffer(void);
 void soundTickRXBuffer(void);
 void soundSetupBuffer(void);
 void soundStopMelody(void);
+bool soundMelodyIsPlaying(void);
 void soundTickMelody(void);
 
 

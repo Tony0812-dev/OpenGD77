@@ -1,27 +1,38 @@
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 #ifndef _OPENGD77_UILOCALISATION_H_
 #define _OPENGD77_UILOCALISATION_H_
 
+
 #if defined(LANGUAGE_BUILD_JAPANESE)
 #define NUM_LANGUAGES 2
 #else
-#define NUM_LANGUAGES 15
+#define NUM_LANGUAGES 18
 #endif
 
 #define LANGUAGE_TEXTS_LENGTH 17
@@ -114,8 +125,8 @@ typedef struct
    const char *rx_group;
    const char *on;
    const char *timeout_beep;
+   const char *list_full;
    const char *UNUSED_1;
-   const char *calibration;
    const char *band_limits;
    const char *beep_volume;
    const char *dmr_mic_gain;
@@ -164,7 +175,7 @@ typedef struct
    const char *vox_tail;
    const char *audio_prompt;
    const char *silent;
-   const char *normal;
+   const char *UNUSED_2;
    const char *beep;
    const char *voice_prompt_level_1;
    const char *transmitTalkerAlias;
@@ -180,7 +191,7 @@ typedef struct
    const char *voice_prompt_level_2;
    const char *voice_prompt_level_3;
    const char *dmr_filter;
-   const char *dmr_cc_filter;
+   const char *UNUSED_4;
    const char *dmr_ts_filter;
    const char *dtmf_contact_list;// Menu number 18
    const char *channel_power;// "Ch Power" for the Channel details screen
@@ -203,32 +214,80 @@ typedef struct
    const char *buttons;
    const char *leds;
    const char *scan_dwell_time;
+   const char *battery_calibration;
+   const char *low;
+   const char *high;
+   const char *dmr_id;
+   const char *scan_on_boot;
+   const char *dtmf_entry;
+   const char *name;
+   const char *UNUSED_3;
+   const char *openDM1801A;
+   const char *time;
+   const char *uptime;
+   const char *hours;
+   const char *minutes;
+   const char *satellite;
+   const char *alarm_time;
+   const char *location;
+   const char *date;
+   const char *timeZone;
+   const char *suspend;
+   const char *pass;
+   const char *elevation;
+   const char *azimuth;
+   const char *inHHMMSS;
+   const char *predicting;
+   const char *maximum;
+   const char *satellite_short;
+   const char *local;// For timezone
+   const char *UTC;// For timezone
+   const char *symbols; // NSEW
+   const char *not_set;// Used when Location etc has not been set.
+   const char *general_options;
+   const char *radio_options;
 } stringsTable_t;
 
 extern const stringsTable_t languages[];
 extern const stringsTable_t *currentLanguage;
 
-enum languageNamesOrder  { 	englishLanguageName = 0,
+enum languageNamesOrder
+{
+	englishLanguageName = 0,
 #if defined(LANGUAGE_BUILD_JAPANESE)
-							japaneseLanguageName,
+	japaneseLanguageName,
 #else
-							catalanLanguageName,
-							danishLanguageName,
-							frenchLanguageName,
-							deutschGermanLanguageName,
-							italianLanguageName,
-							portuguesLanguageName,
-							spanishLanguageName,
-							suomiFinnishLanguageName,
-							polishLanguageName,
-							turkishLanguageName,
-							czechLanguageName,
-							nederlandsDutchLanguageName,
-							slovenianLanguageName,
-							portuguesBrazilLanguageName
+	catalanLanguageName,
+	danishLanguageName,
+	frenchLanguageName,
+	deutschGermanLanguageName,
+	italianLanguageName,
+	portuguesLanguageName,
+	spanishLanguageName,
+	suomiFinnishLanguageName,
+	polishLanguageName,
+	turkishLanguageName,
+	czechLanguageName,
+	nederlandsDutchLanguageName,
+	slovenianLanguageName,
+	portuguesBrazilLanguageName,
+	swedishLanguageName,
+	hungarianLanguageName,
+	croatianLanguageName
 #endif
 };
 
 extern const int LANGUAGE_DISPLAY_ORDER[];
+
+typedef enum
+{
+	SYMBOLS_NORTH = 0,
+	SYMBOLS_SOUTH,
+	SYMBOLS_EAST,
+	SYMBOLS_WEST
+} LanguageSymbol_t;
+
+
+char LanguageGetSymbol(LanguageSymbol_t s);
 
 #endif

@@ -1,19 +1,29 @@
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 #include "hardware/UC1701.h"
 #include "functions/settings.h"
@@ -26,6 +36,7 @@ static void handleEvent(uiEvent_t *ev);
 static void updateBacklightMode(uint8_t mode);
 static void setDisplayInvert(bool invert);
 static void checkMinBacklightValue(void);
+static void buildTimeZoneBufferText(char * buffer);
 
 static menuStatus_t menuDisplayOptionsExitCode = MENU_STATUS_SUCCESS;
 
@@ -47,7 +58,7 @@ static const char *contactOrders[] = { "Ct/DB/TA", "DB/Ct/TA", "TA/Ct/DB", "TA/D
 
 enum DISPLAY_MENU_LIST { DISPLAY_MENU_BRIGHTNESS = 0, DISPLAY_MENU_BRIGHTNESS_OFF, DISPLAY_MENU_CONTRAST, DISPLAY_MENU_BACKLIGHT_MODE,
 	DISPLAY_MENU_TIMEOUT, DISPLAY_MENU_COLOUR_INVERT, DISPLAY_MENU_CONTACT_DISPLAY_ORDER, DISPLAY_MENU_CONTACT_DISPLAY_SPLIT_CONTACT,
-	DISPLAY_BATTERY_UNIT_IN_HEADER, DISPLAY_EXTENDED_INFOS, DISPLAY_ALL_LEDS_ENABLED,
+	DISPLAY_BATTERY_UNIT_IN_HEADER, DISPLAY_EXTENDED_INFOS, DISPLAY_ALL_LEDS_ENABLED, DISLAY_TIMEZONE_VALUE, DISLAY_TIME_UTC_OR_LOCAL,
 	NUM_DISPLAY_MENU_ITEMS };
 
 menuStatus_t menuDisplayOptions(uiEvent_t *ev, bool isFirstRun)
@@ -67,10 +78,8 @@ menuStatus_t menuDisplayOptions(uiEvent_t *ev, bool isFirstRun)
 
 		voicePromptsInit();
 		voicePromptsAppendPrompt(PROMPT_SILENCE);
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		voicePromptsAppendLanguageString(&currentLanguage->display_options);
 		voicePromptsAppendLanguageString(&currentLanguage->menu);
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		voicePromptsAppendPrompt(PROMPT_SILENCE);
 
 		updateScreen(true);
@@ -92,16 +101,15 @@ menuStatus_t menuDisplayOptions(uiEvent_t *ev, bool isFirstRun)
 static void updateScreen(bool isFirstRun)
 {
 	int mNum = 0;
-	static const int bufferLen = 17;
-	char buf[bufferLen];
+	char buf[SCREEN_LINE_BUFFER_SIZE];
 	char * const *leftSide = NULL;// initialize to please the compiler
 	char * const *rightSideConst = NULL;// initialize to please the compiler
-	char rightSideVar[bufferLen];
+	char rightSideVar[SCREEN_LINE_BUFFER_SIZE];
 	voicePrompt_t rightSideUnitsPrompt;
 	const char * rightSideUnitsStr;
 
-	ucClearBuf();
-	bool settingOption = uiShowQuickKeysChoices(buf, bufferLen, currentLanguage->display_options);
+	displayClearBuf();
+	bool settingOption = uiShowQuickKeysChoices(buf, SCREEN_LINE_BUFFER_SIZE, currentLanguage->display_options);
 
 	// Can only display 3 of the options at a time menu at -1, 0 and +1
 	for(int i = -1; i <= 1; i++)
@@ -120,15 +128,15 @@ static void updateScreen(bool isFirstRun)
 			{
 				case DISPLAY_MENU_BRIGHTNESS:
 					leftSide = (char * const *)&currentLanguage->brightness;
-					snprintf(rightSideVar, bufferLen, "%d%%", nonVolatileSettings.displayBacklightPercentage);
+					snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d%%", nonVolatileSettings.displayBacklightPercentage);
 					break;
 				case DISPLAY_MENU_BRIGHTNESS_OFF:
 					leftSide = (char * const *)&currentLanguage->brightness_off;
-					snprintf(rightSideVar, bufferLen, "%d%%", nonVolatileSettings.displayBacklightPercentageOff);
+					snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d%%", nonVolatileSettings.displayBacklightPercentageOff);
 					break;
 				case DISPLAY_MENU_CONTRAST:
 					leftSide = (char * const *)&currentLanguage->contrast;
-					snprintf(rightSideVar, bufferLen, "%d", nonVolatileSettings.displayContrast);
+					snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d", nonVolatileSettings.displayContrast);
 					break;
 				case DISPLAY_MENU_BACKLIGHT_MODE:
 					{
@@ -149,7 +157,7 @@ static void updateScreen(bool isFirstRun)
 						}
 						else
 						{
-							snprintf(rightSideVar, bufferLen, "%d", nonVolatileSettings.backLightTimeout);
+							snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d", nonVolatileSettings.backLightTimeout);
 							rightSideUnitsPrompt = PROMPT_SECONDS;
 							rightSideUnitsStr = "s";
 						}
@@ -165,7 +173,7 @@ static void updateScreen(bool isFirstRun)
 					break;
 				case DISPLAY_MENU_CONTACT_DISPLAY_ORDER:
 					leftSide = (char * const *)&currentLanguage->priority_order;
-					snprintf(rightSideVar, bufferLen, "%s",contactOrders[nonVolatileSettings.contactDisplayPriority]);
+					snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%s",contactOrders[nonVolatileSettings.contactDisplayPriority]);
 					break;
 				case DISPLAY_MENU_CONTACT_DISPLAY_SPLIT_CONTACT:
 					{
@@ -198,10 +206,19 @@ static void updateScreen(bool isFirstRun)
 					leftSide = (char * const *)&currentLanguage->leds;
 					rightSideConst = settingsIsOptionBitSet(BIT_ALL_LEDS_DISABLED) ? (char * const *)&currentLanguage->off : (char * const *)&currentLanguage->on;
 					break;
+				case DISLAY_TIMEZONE_VALUE:
+					leftSide = (char * const *)&currentLanguage->timeZone;
+					buildTimeZoneBufferText(rightSideVar);
+					break;
+				case DISLAY_TIME_UTC_OR_LOCAL:
+					leftSide = (char * const *)&currentLanguage->time;
+					rightSideConst = (nonVolatileSettings.timezone & 0x80)?(char * const *)&currentLanguage->local:(char * const *)&currentLanguage->UTC;
+					break;
+
 			}
 
 			// workaround for non standard format of line for colour display
-			snprintf(buf, bufferLen, "%s:%s", *leftSide, (rightSideVar[0] ? rightSideVar : (rightSideConst ? *rightSideConst : "")));
+			snprintf(buf, SCREEN_LINE_BUFFER_SIZE, "%s:%s", *leftSide, (rightSideVar[0] ? rightSideVar : (rightSideConst ? *rightSideConst : "")));
 
 			if (i == 0)
 			{
@@ -233,7 +250,7 @@ static void updateScreen(bool isFirstRun)
 
 				if (rightSideUnitsStr != NULL)
 				{
-					strncat(rightSideVar, rightSideUnitsStr, bufferLen);
+					strncat(rightSideVar, rightSideUnitsStr, SCREEN_LINE_BUFFER_SIZE);
 				}
 
 				if (menuDataGlobal.menuOptionsTimeout != -1)
@@ -255,7 +272,7 @@ static void updateScreen(bool isFirstRun)
 			{
 				if (rightSideUnitsStr != NULL)
 				{
-					strncat(buf, rightSideUnitsStr, bufferLen);
+					strncat(buf, rightSideUnitsStr, SCREEN_LINE_BUFFER_SIZE);
 				}
 
 				menuDisplayEntry(i, mNum, buf);
@@ -263,7 +280,7 @@ static void updateScreen(bool isFirstRun)
 		}
 	}
 
-	ucRender();
+	displayRender();
 }
 
 static void handleEvent(uiEvent_t *ev)
@@ -320,6 +337,12 @@ static void handleEvent(uiEvent_t *ev)
 		}
 		else if (KEYCHECK_SHORTUP(ev->keys, KEY_GREEN))
 		{
+			// Reset last heard list, otherwise entries won't get updated, accordingly to the new setting value
+			if (nonVolatileSettings.contactDisplayPriority != originalNonVolatileSettings.contactDisplayPriority)
+			{
+				lastheardInitList();
+			}
+
 			// All parameters has already been applied
 			settingsSaveIfNeeded(true);
 			resetOriginalSettingsData();
@@ -333,7 +356,7 @@ static void handleEvent(uiEvent_t *ev)
 			if (nonVolatileSettings.displayContrast != originalNonVolatileSettings.displayContrast)
 			{
 				settingsSet(nonVolatileSettings.displayContrast, originalNonVolatileSettings.displayContrast);
-				ucSetContrast(nonVolatileSettings.displayContrast);
+				displaySetContrast(nonVolatileSettings.displayContrast);
 			}
 
 			if ((nonVolatileSettings.bitfieldOptions & BIT_INVERSE_VIDEO) != (originalNonVolatileSettings.bitfieldOptions & BIT_INVERSE_VIDEO))
@@ -434,7 +457,7 @@ static void handleEvent(uiEvent_t *ev)
 					{
 						settingsIncrement(nonVolatileSettings.displayContrast, 1);
 					}
-					ucSetContrast(nonVolatileSettings.displayContrast);
+					displaySetContrast(nonVolatileSettings.displayContrast);
 					break;
 				case DISPLAY_MENU_BACKLIGHT_MODE:
 					if (nonVolatileSettings.backlightMode < BACKLIGHT_MODE_NONE)
@@ -490,6 +513,32 @@ static void handleEvent(uiEvent_t *ev)
 						GPIO_PinWrite(GPIO_LEDgreen, Pin_LEDgreen, state);
 					}
 					break;
+				case DISLAY_TIMEZONE_VALUE:
+					{
+						int tz = (nonVolatileSettings.timezone & 0x7F) ;
+						if (BUTTONCHECK_DOWN(ev, BUTTON_SK2))
+						{
+							tz++;
+						}
+						else
+						{
+							tz += 4;
+						}
+
+						if (tz <= ((14 * 4) + SETTINGS_TIMEZONE_UTC))
+						{
+							settingsSet(nonVolatileSettings.timezone, ((nonVolatileSettings.timezone & ~0x7F) + tz));
+						}
+						else
+						{
+							tz = (14 * 4) + SETTINGS_TIMEZONE_UTC;
+						}
+					}
+					break;
+				case DISLAY_TIME_UTC_OR_LOCAL:
+					settingsSet(nonVolatileSettings.timezone, (uint8_t) (nonVolatileSettings.timezone | 0x80));
+					break;
+
 			}
 		}
 		else if (KEYCHECK_PRESS(ev->keys, KEY_LEFT) || (QUICKKEY_FUNCTIONID(ev->function) == FUNC_LEFT))
@@ -532,7 +581,7 @@ static void handleEvent(uiEvent_t *ev)
 					{
 						settingsDecrement(nonVolatileSettings.displayContrast, 1);
 					}
-					ucSetContrast(nonVolatileSettings.displayContrast);
+					displaySetContrast(nonVolatileSettings.displayContrast);
 					break;
 				case DISPLAY_MENU_BACKLIGHT_MODE:
 					if (nonVolatileSettings.backlightMode > BACKLIGHT_MODE_AUTO)
@@ -583,6 +632,31 @@ static void handleEvent(uiEvent_t *ev)
 						GPIO_PinWrite(GPIO_LEDgreen, Pin_LEDgreen, 0);
 						settingsSetOptionBit(BIT_ALL_LEDS_DISABLED, true);
 					}
+					break;
+				case DISLAY_TIMEZONE_VALUE:
+					{
+						int tz = (nonVolatileSettings.timezone & 0x7F) ;
+						if (BUTTONCHECK_DOWN(ev, BUTTON_SK2))
+						{
+							tz--;
+						}
+						else
+						{
+							tz -= 4;
+						}
+
+						if (tz >= ((-12 * 4) + SETTINGS_TIMEZONE_UTC))
+						{
+							settingsSet(nonVolatileSettings.timezone, ((nonVolatileSettings.timezone & ~0x7F) + tz));
+						}
+						else
+						{
+							tz = (-12 * 4) + SETTINGS_TIMEZONE_UTC;
+						}
+					}
+					break;
+				case DISLAY_TIME_UTC_OR_LOCAL:
+					settingsSet(nonVolatileSettings.timezone, (uint8_t) (nonVolatileSettings.timezone & ~0x80));
 					break;
 			}
 		}
@@ -636,7 +710,7 @@ static void updateBacklightMode(uint8_t mode)
 	{
 		case BACKLIGHT_MODE_MANUAL:
 		case BACKLIGHT_MODE_NONE:
-			displayEnableBacklight(false); // Could be MANUAL previously, but in OFF state, so turn it OFF blindly.
+			displayEnableBacklight(false,nonVolatileSettings.displayBacklightPercentageOff); // Could be MANUAL previously, but in OFF state, so turn it OFF blindly.
 			break;
 		case BACKLIGHT_MODE_SQUELCH:
 		case BACKLIGHT_MODE_BUTTONS:
@@ -669,4 +743,12 @@ static void checkMinBacklightValue(void)
 				(int8_t) (nonVolatileSettings.displayBacklightPercentage ?
 						(nonVolatileSettings.displayBacklightPercentage - ((nonVolatileSettings.displayBacklightPercentageOff <= BACKLIGHT_PERCENTAGE_STEP) ? BACKLIGHT_PERCENTAGE_STEP_SMALL : BACKLIGHT_PERCENTAGE_STEP)) : 0));
 	}
+}
+
+static void buildTimeZoneBufferText(char * buffer)
+{
+	int tz 		= (nonVolatileSettings.timezone & 0x7F);
+	int hoursPart 	= abs((tz - SETTINGS_TIMEZONE_UTC) / 4);
+	int minutesPart = 15 * abs(tz % 4);// optimisation . No need to subtract the SETTINGS_TIMEZONE_UTC as we just extra act the modulus 4 part.
+	snprintf(buffer, SCREEN_LINE_BUFFER_SIZE, "%c%2u:%02u",(tz >= SETTINGS_TIMEZONE_UTC)?'+':'-', abs(hoursPart),minutesPart);
 }

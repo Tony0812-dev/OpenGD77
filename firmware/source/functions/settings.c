@@ -1,23 +1,33 @@
 /*
- * Copyright (C)2019 	Kai Ludwig, DG4KLU
- * 				and		Roger Clark, VK3KYY / G4KYF
+ * Copyright (C) 2019      Kai Ludwig, DG4KLU
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
-#include "hardware/EEPROM.h"
+#include "interfaces/settingsStorage.h"
 #include "functions/settings.h"
 #include "functions/sound.h"
 #include "functions/trx.h"
@@ -26,13 +36,11 @@
 #include "functions/ticks.h"
 #include "functions/rxPowerSaving.h"
 
-static const int STORAGE_BASE_ADDRESS 		= 0x6000;
-static const int STORAGE_MAGIC_NUMBER 		= 0x475C; // NOTE: never use 0xDEADBEEF, it's reserved value
 
-// Bit patterns for DMR Beep
-const uint8_t BEEP_TX_NONE  = 0x00;
-const uint8_t BEEP_TX_START = 0x01;
-const uint8_t BEEP_TX_STOP  = 0x02;
+#define STORAGE_MAGIC_NUMBER          0x4765 // NOTE: never use 0xDEADBEEF, it's reserved value
+// 0x4764: moves location at the top of the struct, make it upgradable.
+
+const uint32_t SETTINGS_UNITIALISED_LOCATION_LAT = 0x7F000000;
 
 #if defined(PLATFORM_RD5R)
 static uint32_t dirtyTime = 0;
@@ -46,13 +54,12 @@ struct_codeplugChannel_t channelScreenChannelData = { .rxFreq = 0 };
 struct_codeplugContact_t contactListContactData;
 struct_codeplugDTMFContact_t contactListDTMFContactData;
 struct_codeplugChannel_t settingsVFOChannel[2];// VFO A and VFO B from the codeplug.
-int settingsUsbMode = USB_MODE_CPS;
+volatile int settingsUsbMode = USB_MODE_CPS;
 
 int *nextKeyBeepMelody = (int *)MELODY_KEY_BEEP;
 struct_codeplugGeneralSettings_t settingsCodeplugGeneralSettings;
 
-monitorModeSettingsStruct_t monitorModeData = {.isEnabled = false};
-const int ECO_LEVEL_MAX = 4;
+monitorModeSettingsStruct_t monitorModeData = { .isEnabled = false, .qsoInfoUpdated = true, .dmrIsValid = false };
 
 bool settingsSaveSettings(bool includeVFOs)
 {
@@ -68,7 +75,7 @@ bool settingsSaveSettings(bool includeVFOs)
 	nonVolatileSettings.audioPromptMode = AUDIO_PROMPT_MODE_VOICE_LEVEL_3;
 #endif
 
-	bool ret = EEPROM_Write(STORAGE_BASE_ADDRESS, (uint8_t *)&nonVolatileSettings, sizeof(settingsStruct_t));
+	bool ret = settingsStorageWrite((uint8_t *)&nonVolatileSettings, sizeof(settingsStruct_t));
 
 	if (ret)
 	{
@@ -81,7 +88,7 @@ bool settingsSaveSettings(bool includeVFOs)
 bool settingsLoadSettings(void)
 {
 	bool hasRestoredDefaultsettings = false;
-	if (!EEPROM_Read(STORAGE_BASE_ADDRESS, (uint8_t *)&nonVolatileSettings, sizeof(settingsStruct_t)))
+	if (!settingsStorageRead((uint8_t *)&nonVolatileSettings, sizeof(settingsStruct_t)))
 	{
 		nonVolatileSettings.magicNumber = 0;// flag settings could not be loaded
 	}
@@ -99,12 +106,12 @@ bool settingsLoadSettings(void)
 
 	codeplugGetVFO_ChannelData(&settingsVFOChannel[CHANNEL_VFO_A], CHANNEL_VFO_A);
 	codeplugGetVFO_ChannelData(&settingsVFOChannel[CHANNEL_VFO_B], CHANNEL_VFO_B);
-	/* 2020.10.27  vk3kyy. This should not be necessary as the rest of the fimware e.g. on the VFO screen and in the contact lookup handles when Rx Group and / or Contact is set to none
+	/* 2020.10.27  vk3kyy. This should not be necessary as the rest of the firmware e.g. on the VFO screen and in the contact lookup handles when Rx Group and / or Contact is set to none
 	settingsInitVFOChannel(0);// clean up any problems with VFO data
 	settingsInitVFOChannel(1);
 	*/
 
-	trxDMRID = codeplugGetUserDMRID();
+	trxDMRID = uiDataGlobal.userDMRId = codeplugGetUserDMRID();
 	struct_codeplugDeviceInfo_t tmpDeviceInfoBuffer;// Temporary buffer to load the data including the CPS user band limits
 	if (codeplugGetDeviceInfo(&tmpDeviceInfoBuffer))
 	{
@@ -132,6 +139,12 @@ bool settingsLoadSettings(void)
 			USER_FREQUENCY_BANDS[RADIO_BAND_UHF].minFreq = tmpDeviceInfoBuffer.minUHFFreq * 100000;// value needs to be in 10s of Hz;
 			USER_FREQUENCY_BANDS[RADIO_BAND_UHF].maxFreq = tmpDeviceInfoBuffer.maxUHFFreq * 100000;// value needs to be in 10s of Hz;
 		}
+
+		if (nonVolatileSettings.timezone == 0)
+		{
+			nonVolatileSettings.timezone 	= SETTINGS_TIMEZONE_UTC;
+		}
+
 	}
 	//codeplugGetGeneralSettings(&settingsCodeplugGeneralSettings);
 
@@ -157,6 +170,21 @@ bool settingsLoadSettings(void)
 
 	rxPowerSavingSetLevel(nonVolatileSettings.ecoLevel);
 
+	// Scan On Boot is enabled, but latest mode was VFO, switch back to Channel Mode
+	if (settingsIsOptionBitSet(BIT_SCAN_ON_BOOT_ENABLED) && (nonVolatileSettings.initialMenuNumber != UI_CHANNEL_MODE))
+	{
+		settingsSet(nonVolatileSettings.initialMenuNumber, UI_CHANNEL_MODE);
+	}
+
+	// If the menu structure if changed the enum for the screens is changed which can result the initial screen being something other than the CHANNEL or VFO screen
+	if (nonVolatileSettings.initialMenuNumber != UI_CHANNEL_MODE && UI_CHANNEL_MODE != UI_VFO_MODE)
+	{
+		nonVolatileSettings.initialMenuNumber = UI_VFO_MODE;
+	}
+
+
+	nonVolatileSettings.dmrCcTsFilter |= DMR_CC_FILTER_PATTERN;// Force CC Filter to be enabled
+
 	return hasRestoredDefaultsettings;
 }
 
@@ -177,7 +205,16 @@ void settingsInitVFOChannel(int vfoNumber)
 
 void settingsRestoreDefaultSettings(void)
 {
+	// Upgrade location settings
+	if ((nonVolatileSettings.magicNumber >= 0x4764) == false)
+	{
+		nonVolatileSettings.locationLat 	= SETTINGS_UNITIALISED_LOCATION_LAT;// Value that are out of range, so that it can be detected in the Satellite menu;
+		nonVolatileSettings.locationLon 	= 0;
+		nonVolatileSettings.timezone 		= SETTINGS_TIMEZONE_UTC;
+	}
+
 	nonVolatileSettings.magicNumber = STORAGE_MAGIC_NUMBER;
+
 	nonVolatileSettings.currentChannelIndexInZone = 0;
 	nonVolatileSettings.currentChannelIndexInAllZone = 1;
 	nonVolatileSettings.currentIndexInTRxGroupList[SETTINGS_CHANNEL_MODE] = 0;
@@ -192,7 +229,7 @@ void settingsRestoreDefaultSettings(void)
 #endif
 	nonVolatileSettings.backLightTimeout = 0U;//0 = never timeout. 1 - 255 time in seconds
 	nonVolatileSettings.displayContrast =
-#if defined(PLATFORM_DM1801)
+#if defined(PLATFORM_DM1801) || defined(PLATFORM_DM1801A)
 			0x0e; // 14
 #elif defined (PLATFORM_RD5R)
 			0x06;
@@ -295,8 +332,11 @@ void settingsRestoreDefaultSettings(void)
 #endif
 
 	nonVolatileSettings.temperatureCalibration = 0;
+	nonVolatileSettings.batteryCalibration = (0x05) + (0x07 << 4);// Time is in upper 4 bits battery calibration in upper 4 bits
 
 	nonVolatileSettings.ecoLevel = 1;
+
+	nonVolatileSettings.vfoSweepSettings = ((((sizeof(VFO_SWEEP_SCAN_RANGE_SAMPLE_STEP_TABLE) / sizeof(VFO_SWEEP_SCAN_RANGE_SAMPLE_STEP_TABLE[0])) - 1) << 12) | (VFO_SWEEP_RSSI_NOISE_FLOOR_DEFAULT << 7) | VFO_SWEEP_GAIN_DEFAULT);
 
 	currentChannelData = &settingsVFOChannel[nonVolatileSettings.currentVFONumber];// Set the current channel data to point to the VFO data since the default screen will be the VFO
 
@@ -305,14 +345,15 @@ void settingsRestoreDefaultSettings(void)
 	settingsSaveSettings(false);
 }
 
-void enableVoicePromptsIfLoaded(void)
+void enableVoicePromptsIfLoaded(bool enableFullPrompts)
 {
 	if (voicePromptDataIsLoaded)
 	{
 #if defined(PLATFORM_GD77S)
 		nonVolatileSettings.audioPromptMode = AUDIO_PROMPT_MODE_VOICE_LEVEL_3;
 #else
-		nonVolatileSettings.audioPromptMode = AUDIO_PROMPT_MODE_VOICE_LEVEL_1;
+
+		nonVolatileSettings.audioPromptMode = enableFullPrompts?AUDIO_PROMPT_MODE_VOICE_LEVEL_3:AUDIO_PROMPT_MODE_VOICE_LEVEL_1;
 #endif
 		settingsDirty = true;
 		settingsSaveSettings(false);
@@ -464,7 +505,7 @@ void settingsSetDirty(void)
 	settingsDirty = true;
 
 #if defined(PLATFORM_RD5R)
-	dirtyTime = fw_millis();
+	dirtyTime = ticksGetMillis();
 #endif
 }
 
@@ -473,7 +514,7 @@ void settingsSetVFODirty(void)
 	settingsVFODirty = true;
 
 #if defined(PLATFORM_RD5R)
-	dirtyTime = fw_millis();
+	dirtyTime = ticksGetMillis();
 #endif
 }
 
@@ -483,7 +524,7 @@ void settingsSaveIfNeeded(bool immediately)
 	const int DIRTY_DURTION_MILLISECS = 500;
 
 	if ((settingsDirty || settingsVFODirty) &&
-			(immediately || (((fw_millis() - dirtyTime) > DIRTY_DURTION_MILLISECS) && // DIRTY_DURTION_ has passed since last change
+			(immediately || (((ticksGetMillis() - dirtyTime) > DIRTY_DURTION_MILLISECS) && // DIRTY_DURTION_ has passed since last change
 					((uiDataGlobal.Scan.active == false) || // not scanning, or scanning anything but channels
 							(menuSystemGetCurrentMenuNumber() != UI_CHANNEL_MODE)))))
 	{

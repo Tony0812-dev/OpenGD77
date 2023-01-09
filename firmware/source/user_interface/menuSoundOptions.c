@@ -1,19 +1,29 @@
 /*
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 #include "hardware/UC1701.h"
 #include "functions/settings.h"
@@ -47,10 +57,8 @@ menuStatus_t menuSoundOptions(uiEvent_t *ev, bool isFirstRun)
 
 		voicePromptsInit();
 		voicePromptsAppendPrompt(PROMPT_SILENCE);
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		voicePromptsAppendLanguageString(&currentLanguage->sound_options);
 		voicePromptsAppendLanguageString(&currentLanguage->menu);
-		voicePromptsAppendPrompt(PROMPT_SILENCE);
 		voicePromptsAppendPrompt(PROMPT_SILENCE);
 
 		updateScreen(isFirstRun);
@@ -72,16 +80,15 @@ menuStatus_t menuSoundOptions(uiEvent_t *ev, bool isFirstRun)
 static void updateScreen(bool isFirstRun)
 {
 	int mNum = 0;
-	static const int bufferLen = 17;
-	char buf[bufferLen];
+	char buf[SCREEN_LINE_BUFFER_SIZE];
 	char * const *leftSide = NULL;// initialise to please the compiler
 	char * const *rightSideConst = NULL;// initialise to please the compiler
-	char rightSideVar[bufferLen];
+	char rightSideVar[SCREEN_LINE_BUFFER_SIZE];
 	voicePrompt_t rightSideUnitsPrompt;
 	const char * rightSideUnitsStr;
 
-	ucClearBuf();
-	bool settingOption = uiShowQuickKeysChoices(buf, bufferLen,currentLanguage->sound_options);
+	displayClearBuf();
+	bool settingOption = uiShowQuickKeysChoices(buf, SCREEN_LINE_BUFFER_SIZE, currentLanguage->sound_options);
 
 	// Can only display 3 of the options at a time menu at -1, 0 and +1
 	for(int i = -1; i <= 1; i++)
@@ -108,7 +115,7 @@ static void updateScreen(bool isFirstRun)
 					{
 						if (nonVolatileSettings.txTimeoutBeepX5Secs != 0)
 						{
-							snprintf(rightSideVar, bufferLen, "%d", nonVolatileSettings.txTimeoutBeepX5Secs * 5);
+							snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d", nonVolatileSettings.txTimeoutBeepX5Secs * 5);
 							rightSideUnitsPrompt = PROMPT_SECONDS;
 							rightSideUnitsStr = "s";
 						}
@@ -126,7 +133,7 @@ static void updateScreen(bool isFirstRun)
 					}
 					else
 					{
-						snprintf(rightSideVar, bufferLen, "%ddB", (2 - nonVolatileSettings.beepVolumeDivider) * 3);
+						snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%ddB", (2 - nonVolatileSettings.beepVolumeDivider) * 3);
 						soundBeepVolumeDivider = nonVolatileSettings.beepVolumeDivider;
 					}
 
@@ -145,15 +152,15 @@ static void updateScreen(bool isFirstRun)
 					break;
 				case OPTIONS_MIC_GAIN_DMR: // DMR Mic gain
 					leftSide = (char * const *)&currentLanguage->dmr_mic_gain;
-					snprintf(rightSideVar, bufferLen, "%ddB", (nonVolatileSettings.micGainDMR - 11) * 3);
+					snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%ddB", (nonVolatileSettings.micGainDMR - 11) * 3);
 					break;
 				case OPTIONS_MIC_GAIN_FM: // FM Mic gain
 					leftSide = (char * const *)&currentLanguage->fm_mic_gain;
-					snprintf(rightSideVar, bufferLen, "%d", (nonVolatileSettings.micGainFM - 16));
+					snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d", (nonVolatileSettings.micGainFM - 16));
 					break;
 				case OPTIONS_VOX_THRESHOLD:
 					leftSide = (char * const *)&currentLanguage->vox_threshold;
-					snprintf(rightSideVar, bufferLen, "%d", nonVolatileSettings.voxThreshold);
+					snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d", nonVolatileSettings.voxThreshold);
 					break;
 				case OPTIONS_VOX_TAIL:
 					leftSide = (char * const *)&currentLanguage->vox_tail;
@@ -163,7 +170,7 @@ static void updateScreen(bool isFirstRun)
 						uint8_t secs = (uint8_t)tail;
 						uint8_t fracSec = (tail - secs) * 10;
 
-						snprintf(rightSideVar, bufferLen, "%d.%d", secs, fracSec);
+						snprintf(rightSideVar, SCREEN_LINE_BUFFER_SIZE, "%d.%d", secs, fracSec);
 						rightSideUnitsPrompt = PROMPT_SECONDS;
 						rightSideUnitsStr = "s";
 					}
@@ -182,7 +189,7 @@ static void updateScreen(bool isFirstRun)
 					break;
 			}
 
-			snprintf(buf, bufferLen, "%s:%s", *leftSide, (rightSideVar[0] ? rightSideVar : (rightSideConst ? *rightSideConst : "")));
+			snprintf(buf, SCREEN_LINE_BUFFER_SIZE, "%s:%s", *leftSide, (rightSideVar[0] ? rightSideVar : (rightSideConst ? *rightSideConst : "")));
 
 			if (i == 0)
 			{
@@ -214,7 +221,7 @@ static void updateScreen(bool isFirstRun)
 
 				if (rightSideUnitsStr != NULL)
 				{
-					strncat(rightSideVar, rightSideUnitsStr, bufferLen);
+					strncat(rightSideVar, rightSideUnitsStr, SCREEN_LINE_BUFFER_SIZE);
 				}
 
 				if (menuDataGlobal.menuOptionsTimeout != -1)
@@ -236,7 +243,7 @@ static void updateScreen(bool isFirstRun)
 			{
 				if (rightSideUnitsStr != NULL)
 				{
-					strncat(buf, rightSideUnitsStr, bufferLen);
+					strncat(buf, rightSideUnitsStr, SCREEN_LINE_BUFFER_SIZE);
 				}
 
 				menuDisplayEntry(i, mNum, buf);
@@ -244,7 +251,7 @@ static void updateScreen(bool isFirstRun)
 		}
 	}
 
-	ucRender();
+	displayRender();
 }
 
 static void handleEvent(uiEvent_t *ev)
@@ -312,7 +319,7 @@ static void handleEvent(uiEvent_t *ev)
 			// Restore original settings.
 			memcpy(&nonVolatileSettings, &originalNonVolatileSettings, sizeof(settingsStruct_t));
 			soundBeepVolumeDivider = nonVolatileSettings.beepVolumeDivider;
-			setMicGainDMR(nonVolatileSettings.micGainDMR);
+			HRC6000SetMicGainDMR(nonVolatileSettings.micGainDMR);
 			trxSetMicGainFM(nonVolatileSettings.micGainFM);
 			voxSetParameters(nonVolatileSettings.voxThreshold, nonVolatileSettings.voxTailUnits);
 			settingsSaveIfNeeded(true);
@@ -365,7 +372,7 @@ static void handleEvent(uiEvent_t *ev)
 					if (nonVolatileSettings.micGainDMR < 15)
 					{
 						settingsIncrement(nonVolatileSettings.micGainDMR, 1);
-						setMicGainDMR(nonVolatileSettings.micGainDMR);
+						HRC6000SetMicGainDMR(nonVolatileSettings.micGainDMR);
 					}
 					break;
 				case OPTIONS_MIC_GAIN_FM: // FM Mic gain
@@ -442,7 +449,7 @@ static void handleEvent(uiEvent_t *ev)
 					if (nonVolatileSettings.micGainDMR > 0)
 					{
 						settingsDecrement(nonVolatileSettings.micGainDMR, 1);
-						setMicGainDMR(nonVolatileSettings.micGainDMR);
+						HRC6000SetMicGainDMR(nonVolatileSettings.micGainDMR);
 					}
 					break;
 				case OPTIONS_MIC_GAIN_FM: // FM Mic gain

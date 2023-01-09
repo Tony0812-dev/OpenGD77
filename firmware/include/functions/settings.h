@@ -1,20 +1,30 @@
 /*
- * Copyright (C)2019 	Roger Clark, VK3KYY / G4KYF
- * 				and		Kai Ludwig, DG4KLU
+ * Copyright (C) 2019      Kai Ludwig, DG4KLU
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
+ *                         Daniel Caujolle-Bert, F1RMB
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 
 #ifndef _OPENGD77_SETTINGS_H_
@@ -34,10 +44,15 @@ enum ALLOW_PRIVATE_CALLS_MODE { ALLOW_PRIVATE_CALLS_OFF = 0, ALLOW_PRIVATE_CALLS
 enum BAND_LIMITS_ENUM { BAND_LIMITS_NONE = 0 , BAND_LIMITS_ON_LEGACY_DEFAULT, BAND_LIMITS_FROM_CPS };
 enum INFO_ON_SCREEN { INFO_ON_SCREEN_OFF = 0x00, INFO_ON_SCREEN_TS = 0x01, INFO_ON_SCREEN_PWR = 0x02, INFO_ON_SCREEN_BOTH = 0x03 };
 
-extern const int ECO_LEVEL_MAX;
-extern const uint8_t BEEP_TX_NONE;
-extern const uint8_t BEEP_TX_START;
-extern const uint8_t BEEP_TX_STOP;
+#define ECO_LEVEL_MAX          5
+
+#define SETTINGS_TIMEZONE_UTC 64
+extern const uint32_t SETTINGS_UNITIALISED_LOCATION_LAT;
+
+// Bit patterns for DMR Beep
+#define BEEP_TX_NONE        0x00
+#define BEEP_TX_START       0x01
+#define BEEP_TX_STOP        0x02
 
 extern int settingsCurrentChannelNumber;
 extern int *nextKeyBeepMelody;
@@ -52,12 +67,21 @@ typedef enum
 	BIT_BATTERY_VOLTAGE_IN_HEADER   = (1 << 3),
 	BIT_SETTINGS_UPDATED            = (1 << 4),
 	BIT_TX_RX_FREQ_LOCK             = (1 << 5),
-	BIT_ALL_LEDS_DISABLED           = (1 << 6)
+	BIT_ALL_LEDS_DISABLED           = (1 << 6),
+	BIT_SCAN_ON_BOOT_ENABLED        = (1 << 7),
+	BIT_POWEROFF_SUSPEND            = (1 << 8),
+	BIT_SATELLITE_MANUAL_AUTO       = (1 << 9),
 } bitfieldOptions_t;
 
 typedef struct
 {
 	int 			magicNumber;
+	// The following settings won't be reset default from magicNumber 0x4761
+	uint32_t		locationLat;// fixed point encoded as 1 sign bit, 8 bits integer, 23 bits as decimal
+	uint32_t		locationLon;// fixed point encoded as 1 sign bit, 8 bits integer, 23 bits as decimal
+	uint8_t			timezone;// Lower 7 bits are the timezone. 64 = UTC, values < 64 are negative TZ values.  Bit 8 is a flag which indicates TZ/UTC. 0 = UTC
+	// -----------------------------------------------
+	uint16_t		vfoSweepSettings; // 3bits: channel step | 5 bits: RSSI noise floor | 7bits: gain
 	uint32_t		overrideTG;
 	uint32_t		vfoScanLow[2]; // low frequency for VFO Scanning
 	uint32_t		vfoScanHigh[2]; // High frequency for VFO Scanning
@@ -88,12 +112,12 @@ typedef struct
 	uint8_t			scanStepTime;
 	uint8_t			squelchDefaults[RADIO_BANDS_TOTAL_NUM]; // VHF, 200Mhz and UHF
 	uint8_t			currentVFONumber;
+	uint8_t			languageIndex;
 	uint16_t		tsManualOverride;
 	uint8_t			dmrDestinationFilter;
 	uint8_t			dmrCaptureTimeout;
 	uint8_t			dmrCcTsFilter;
 	uint8_t			analogFilterLevel;
-	uint8_t			languageIndex;
 	uint8_t			hotspotType;
 	uint8_t    		privateCalls;
 	uint8_t			contactDisplayPriority;
@@ -102,6 +126,7 @@ typedef struct
 	uint8_t			voxTailUnits; // 500ms units
 	uint8_t			audioPromptMode;
 	int8_t			temperatureCalibration;// Units of 0.5 deg C
+	uint8_t			batteryCalibration; // Units of 0.01V (NOTE: only the 4 lower bits are used)
 	uint8_t			ecoLevel;// Power saving / economy level
 } settingsStruct_t;
 
@@ -155,14 +180,18 @@ typedef enum PROMPT_AUTOPLAY_THRESHOLD
 
 typedef struct
 {
-	bool 	isEnabled;
-	int 	DMRTimeout;
-	int 	savedRadioMode;
-	uint8_t savedSquelch;
-	int 	savedDMRCcTsFilter;
-	int 	savedDMRDestinationFilter;
-	int 	savedDMRCc;
-	int 	savedDMRTs;
+	volatile bool   triggered;
+	volatile bool	isEnabled;
+	volatile bool	qsoInfoUpdated;
+	volatile bool   dmrIsValid;
+	int				dmrTimeout;
+	uint8_t			dmrFrameSkip;
+	int 			savedRadioMode;
+	uint8_t			savedSquelch;
+	int 			savedDMRCcTsFilter;
+	int 			savedDMRDestinationFilter;
+	int 			savedDMRCc;
+	int 			savedDMRTs;
 } monitorModeSettingsStruct_t;
 
 extern settingsStruct_t nonVolatileSettings;
@@ -171,7 +200,7 @@ extern struct_codeplugChannel_t channelScreenChannelData;
 extern struct_codeplugContact_t contactListContactData;
 extern struct_codeplugDTMFContact_t contactListDTMFContactData;
 extern int contactListContactIndex;
-extern int settingsUsbMode;
+extern volatile int settingsUsbMode;
 extern monitorModeSettingsStruct_t monitorModeData;
 
 // Do not use the following settingsSet<TYPE>(...) functions, use settingsSet() instead
@@ -250,7 +279,7 @@ bool settingsLoadSettings(void);
 void settingsRestoreDefaultSettings(void);
 void settingsEraseCustomContent(void);
 void settingsInitVFOChannel(int vfoNumber);
-void enableVoicePromptsIfLoaded(void);
+void enableVoicePromptsIfLoaded(bool enableFullPrompts);
 int settingsGetScanStepTimeMilliseconds(void);
 
 #endif

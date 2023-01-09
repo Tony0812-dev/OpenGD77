@@ -1,20 +1,29 @@
 /* -*- coding: binary; -*- */
 /* 
- * Copyright (C)2019 Roger Clark. VK3KYY / G4KYF
+ * Copyright (C) 2019-2021 Roger Clark, VK3KYY / G4KYF
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions
+ * are met:
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
+ *    in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * 4. Use of this source code or binary releases for commercial purposes is strictly forbidden. This includes, without limitation,
+ *    incorporation in a commercial product or incorporation into a product or project which allows commercial use.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+ * USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
  */
 /* WARNING: THIS FILE USES BINARY (OCTAL) ENCODING, IT USES REMAPPED GLYPHS
  *
@@ -35,23 +44,23 @@
 const stringsTable_t polishLanguage =
 {
 .LANGUAGE_NAME 			= "Polski", // MaxLen: 16
-.language				= "J†zyk", // MaxLen: 16
 .menu					= "Spis", // MaxLen: 16
 .credits				= "Wspóˆtwórcy", // MaxLen: 16
 .zone					= "Strefy", // MaxLen: 16
 .rssi					= "Sygnaˆ", // MaxLen: 16
 .battery				= "Bateria", // MaxLen: 16
 .contacts				= "Kontakty", // MaxLen: 16
-.firmware_info				= "Wersja programu", // MaxLen: 16
 .last_heard				= "Ostatnio aktywne", // MaxLen: 16
-.options				= "Opcje", // MaxLen: 16
+.firmware_info				= "Wersja programu", // MaxLen: 16
+.options				= "Opcje ogólne", // MaxLen: 16
 .display_options			= "Opcje ekranu", // MaxLen: 16
 .sound_options				= "Opcje dwi†ku", // MaxLen: 16
 .channel_details			= "Detale kanaˆu", // MaxLen: 16
+.language				= "J†zyk", // MaxLen: 16
 .new_contact				= "Nowy kontakt", // MaxLen: 16
-.dmr_contacts				= "DMR contacts", // MaxLen: 16
-.hotspot_mode				= "HotSpot", // MaxLen: 16
+.dmr_contacts				= "DMR kontakt", // MaxLen: 16
 .contact_details			= "Detale kontaktu", // MaxLen: 16
+.hotspot_mode				= "HotSpot", // MaxLen: 16
 .built					= "Kompilacja", // MaxLen: 16
 .zones					= "Strefy", // MaxLen: 16
 .keypad					= "Klawiatura", // MaxLen: 12 (with .ptt)
@@ -79,7 +88,7 @@ const stringsTable_t polishLanguage =
 .scan					= "Skanowanie", // MaxLen: 16
 .channelToVfo				= "Kanaˆ > VFO", // MaxLen: 16
 .vfoToChannel				= "VFO > Kanaˆ", // MaxLen: 16
-.vfoToNewChannel		= "VFO > Nowy kanaˆ", // MaxLen: 16
+.vfoToNewChannel			= "VFO > Nowy kanaˆ", // MaxLen: 16
 .group					= "Grupa", // MaxLen: 16 (with .type)
 .private				= "Prywatny", // MaxLen: 16 (with .type)
 .all					= "Wszystko", // MaxLen: 16 (with .type)
@@ -97,16 +106,16 @@ const stringsTable_t polishLanguage =
 .bandwidth				= "Pasmo", // MaxLen: 16 (with ':' + .n_a, "25kHz" or "12.5kHz")
 .stepFreq				= "Krok", // MaxLen: 7 (with ':' + xx.xxkHz fitted)
 .tot					= "TOT", // MaxLen: 16 (with ':' + .off or 15..3825)
-.off					= "Wyˆ.", // MaxLen: 16 (with ':' + .timeout_beep, .calibration or .band_limits)
+.off					= "Wyˆ.", // MaxLen: 16 (with ':' + .timeout_beep, .band_limits)
 .zone_skip				= "Pomi‹ kanaˆ", // MaxLen: 16 (with ':' + .yes or .no)
 .all_skip				= "Pomi‹ All", // MaxLen: 16 (with ':' + .yes or .no)
 .yes					= "Tak", // MaxLen: 16 (with ':' + .zone_skip, .all_skip)
 .no					= "Nie", // MaxLen: 16 (with ':' + .zone_skip, .all_skip)
 .rx_group				= "Grupa", // MaxLen: 16 (with ':' and codeplug group name)
-.on					= "Wˆ.", // MaxLen: 16 (with ':' + .calibration or .band_limits)
+.on					= "Wˆ.", // MaxLen: 16 (with ':' + .band_limits)
 .timeout_beep				= "Czas bipa", // MaxLen: 16 (with ':' + .off or 5..20)
+.list_full				= "List full",
 .UNUSED_1				= "",
-.calibration				= "Kalibracja", // MaxLen: 16 (with ':' + .on or .off)
 .band_limits				= "Limit pasma", // MaxLen: 16 (with ':' + .on or .off)
 .beep_volume				= "Gˆos bipa", // MaxLen: 16 (with ':' + -24..6 + 'dB')
 .dmr_mic_gain				= "DMR mic", // MaxLen: 16 (with ':' + -33..12 + 'dB')
@@ -117,12 +126,12 @@ const stringsTable_t polishLanguage =
 .brightness				= "Jasno‚", // MaxLen: 16 (with ':' + 0..100 + '%')
 .brightness_off				= "Mini jasno‚", // MaxLen: 16 (with ':' + 0..100 + '%')
 .contrast				= "Kontrast", // MaxLen: 16 (with ':' + 12..30)
-.colour_invert				= "Inwersja", // MaxLen: 16
+.colour_invert				= "Odwrócony", // MaxLen: 16
 .colour_normal				= "Normalny", // MaxLen: 16
 .backlight_timeout			= "Œwiecenie", // MaxLen: 16 (with ':' + .no to 30)
 .scan_delay				= "Czas skan.", // MaxLen: 16 (with ':' + 1..30 + 's')
-.yes___in_uppercase					= "TAK", // MaxLen: 8 (choice above green/red buttons)
-.no___in_uppercase					= "NIE", // MaxLen: 8 (choice above green/red buttons)
+.yes___in_uppercase			= "TAK", // MaxLen: 8 (choice above green/red buttons)
+.no___in_uppercase			= "NIE", // MaxLen: 8 (choice above green/red buttons)
 .DISMISS				= "ODWO‡A", // MaxLen: 8 (choice above green/red buttons)
 .scan_mode				= "Tryb skan.", // MaxLen: 16 (with ':' + .hold or .pause)
 .hold					= "Stój", // MaxLen: 16 (with ':' + .scan_mode)
@@ -142,7 +151,7 @@ const stringsTable_t polishLanguage =
 .Auto					= "Automat", // MaxLen 16 (with .mode + ':')
 .manual					= "Manualny",  // MaxLen 16 (with .mode + ':') 
 .ptt_toggle				= "Staˆe PTT", // MaxLen 16 (with ':' + .on or .off)
-.private_call_handling  = "Zezwól PC", // MaxLen 16 (with ':' + .on ot .off)
+.private_call_handling  		= "Zezwól PC", // MaxLen 16 (with ':' + .on ot .off)
 .stop					= "Stop", // Maxlen 16 (with ':' + .scan_mode)
 .one_line				= "1 linia", // MaxLen 16 (with ':' + .contact)
 .two_lines				= "2 linie", // MaxLen 16 (with ':' + .contact)
@@ -153,27 +162,27 @@ const stringsTable_t polishLanguage =
 .both					= "Oba", // MaxLen 16 (with ':' + .dmr_beep)
 .vox_threshold                          = "VOX Thres.", // MaxLen 16 (with ':' + .off or 1..30)
 .vox_tail                               = "VOX Tail", // MaxLen 16 (with ':' + .n_a or '0.0s')
-.audio_prompt				= "Bip audio",// Maxlen 16 (with ':' + .silent, .normal, .beep or .voice_prompt_level_1)
+.audio_prompt				= "Bip audio",// Maxlen 16 (with ':' + .silent, .beep or .voice_prompt_level_1)
 .silent                                 = "Brak", // Maxlen 16 (with : + audio_prompt)
-.normal                                 = "Normal", // Maxlen 16 (with : + audio_prompt)
+.UNUSED_2				= "",
 .beep					= "Bip", // Maxlen 16 (with : + audio_prompt)
-.voice_prompt_level_1					= "Voice", // Maxlen 16 (with : + audio_prompt)
-.transmitTalkerAlias	= "TA Tx", // Maxlen 16 (with : + .on or .off)
-.squelch_VHF			= "VHF Squelch",// Maxlen 16 (with : + XX%)
-.squelch_220			= "220 Squelch",// Maxlen 16 (with : + XX%)
-.squelch_UHF			= "UHF Squelch", // Maxlen 16 (with : + XX%)
-.display_background_colour = "Kolor" , // Maxlen 16 (with : + .colour_normal or .colour_invert)
+.voice_prompt_level_1			= "Gˆos 1", // Maxlen 16 (with : + audio_prompt)
+.transmitTalkerAlias			= "TA Tx", // Maxlen 16 (with : + .on or .off)
+.squelch_VHF				= "VHF Squelch",// Maxlen 16 (with : + XX%)
+.squelch_220				= "220 Squelch",// Maxlen 16 (with : + XX%)
+.squelch_UHF				= "UHF Squelch", // Maxlen 16 (with : + XX%)
+.display_background_colour 		= "Kolor" , // Maxlen 16 (with : + .colour_normal or .colour_invert)
 .openGD77 				= "OpenGD77",// Do not translate
 .openGD77S 				= "OpenGD77S",// Do not translate
-.openDM1801 			= "OpenDM1801",// Do not translate
+.openDM1801 				= "OpenDM1801",// Do not translate
 .openRD5R 				= "OpenRD5R",// Do not translate
 .gitCommit				= "Git commit",
-.voice_prompt_level_2	= "Gˆos L2", // Maxlen 16 (with : + audio_prompt)
-.voice_prompt_level_3	= "Gˆos L3", // Maxlen 16 (with : + audio_prompt)
+.voice_prompt_level_2			= "Gˆos 2", // Maxlen 16 (with : + audio_prompt)
+.voice_prompt_level_3			= "Gˆos 3", // Maxlen 16 (with : + audio_prompt)
 .dmr_filter				= "DMR Filtr",// MaxLen: 12 (with ':' + settings: "TG" or "Ct" or "RxG")
-.dmr_cc_filter			= "CC Filtr", // MaxLen: 12 (with ':' + settings: .on or .off)
-.dmr_ts_filter			= "TS Filtr", // MaxLen: 12 (with ':' + settings: .on or .off)
-.dtmf_contact_list			= "FM DTMF contacts", // Maxlen: 16
+.UNUSED_4				= "",
+.dmr_ts_filter				= "TS Filtr", // MaxLen: 12 (with ':' + settings: .on or .off)
+.dtmf_contact_list			= "FM DTMF kontakt", // Maxlen: 16
 .channel_power				= "Moc kanaˆu", //Displayed as "Ch Power:" + .from_master or "Ch Power:"+ power text e.g. "Power:500mW" . Max total length 16
 .from_master				= "Master",// Displayed if per-channel power is not enabled  the .channel_power
 .set_quickkey				= "Set Quick Key", // MaxLen: 16
@@ -186,14 +195,46 @@ const stringsTable_t polishLanguage =
 .seconds				= "sekund",
 .radio_info				= "Info o radiu",
 .temperature_calibration		= "Temp Cal",
-.pin_code				= "Pin Code",
-.please_confirm				= "Please confirm", // MaxLen: 15
-.vfo_freq_bind_mode			= "Freq. Bind",
-.overwrite_qm				= "Overwrite ?", //Maxlen: 14 chars
-.eco_level				= "Eco Level",
-.buttons				= "Buttons",
-.leds					= "LEDs",
-.scan_dwell_time		= "Scan dwell"
+.pin_code				= "Pin Kod",
+.please_confirm				= "To potwierd..", // MaxLen: 15
+.vfo_freq_bind_mode			= "Wi„’ L1iL2",
+.overwrite_qm				= "Przypisa‚ ?", //Maxlen: 14 chars
+.eco_level				= "Eco poziom",
+.buttons				= "Klawisz",
+.leds					= "Œwiatˆo LED",
+.scan_dwell_time			= "Scan dwell",
+.battery_calibration			= "Batt. Cal",
+.low					= "Niski",
+.high					= "Wysoki",
+.dmr_id					= "DMR ID",
+.scan_on_boot				= "Skan->Start",
+.dtmf_entry				= "DTMF wpis",
+.name					= "Nazwa",
+.UNUSED_3				= "",
+.openDM1801A 				= "OpenDM1801A", // Do not translate
+.time					= "Czas",
+.uptime					= "Upˆyw czasu",
+.hours					= "Godzina",
+.minutes				= "Minuta",
+.satellite				= "Satelita",
+.alarm_time				= "Alarm czasu",
+.location				= "Lokalizacja",
+.date					= "Data",
+.timeZone				= "Strefa",
+.suspend				= "Zawiesi‚",
+.pass					= "Pass", // For satellite screen
+.elevation				= "El",
+.azimuth				= "Az",
+.inHHMMSS				= "in",
+.predicting				= "Przewidywanie",
+.maximum				= "Max",
+.satellite_short			= "Sat",
+.local					= "Local",
+.UTC					= "UTC",
+.symbols				= "NSEW", // symbols: N,S,E,W
+.not_set				= "Nie ustawiony",
+.general_options			= "Gˆówne opcje",
+.radio_options				= "Opcje radia"
 };
 /********************************************************************
  *
